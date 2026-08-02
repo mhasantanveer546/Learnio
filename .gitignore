@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Learnio-specific
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+app/static/faiss_index/*
+!app/static/faiss_index/.gitkeep
