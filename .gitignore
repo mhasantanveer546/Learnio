@@ -217,8 +217,35 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Learnio-specific
-app/static/uploads/*
-!app/static/uploads/.gitkeep
+# ===========================
+# Learnio
+# ===========================
+
+# Environment
+.env
+.env.local
+
+# Uploads (outside app/)
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# FAISS indexes
 app/static/faiss_index/*
 !app/static/faiss_index/.gitkeep
+
+# SQLite database
+instance/
+*.db
+*.sqlite3
+
+# Generated exports (future)
+exports/*
+!exports/.gitkeep
+
+# Backup files
+backups/*
+!backups/.gitkeep

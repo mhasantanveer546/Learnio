@@ -1,14 +1,20 @@
 import os
 from dotenv import load_dotenv
 
+
 load_dotenv()
+
+
+BASE_DIR = os.path.abspath(
+    os.path.dirname(__file__)
+)
 
 
 class Config:
 
     SECRET_KEY = os.environ.get(
         "SECRET_KEY",
-        "development-secret-key"
+        "unsafe-secret"
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -18,9 +24,14 @@ class DevelopmentConfig(Config):
 
     DEBUG = True
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        "sqlite:///learnio.db"
+    SQLALCHEMY_DATABASE_URI = (
+        "sqlite:///"
+        + os.path.join(
+            BASE_DIR,
+            "..",
+            "instance",
+            "learnio.db"
+        )
     )
 
 
@@ -37,6 +48,6 @@ config = {
 
     "development": DevelopmentConfig,
 
-    "production": ProductionConfig,
+    "production": ProductionConfig
 
 }
