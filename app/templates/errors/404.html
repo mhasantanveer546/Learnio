@@ -1,7 +1,9 @@
-<h1>
-404
-</h1>
-
-<p>
-Page not found.
-</p>
+{% extends "base.html" %}
+{% block title %}Page Not Found{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold text-primary">404</h1>
+    <p class="text-muted">The page you're looking for doesn't exist.</p>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-primary mt-2">Back to Dashboard</a>
+</div>
+{% endblock %}

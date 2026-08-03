@@ -1,7 +1,9 @@
-<h1>
-500
-</h1>
-
-<p>
-internal server error.
-</p>
+{% extends "base.html" %}
+{% block title %}Server Error{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold text-danger">500</h1>
+    <p class="text-muted">Something went wrong on our end. Please try again shortly.</p>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-primary mt-2">Back to Dashboard</a>
+</div>
+{% endblock %}

@@ -1,30 +1,19 @@
 {% extends "base.html" %}
 
-
-{% block title %}
-Dashboard
-{% endblock %}
-
-
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-
-
-<h1>
-Welcome to Learnio
-</h1>
-
-
-<p>
-Learn Smarter. Study Faster.
-</p>
-
-
-<div class="card p-4">
-
-Your AI Study Assistant
-
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-semibold mb-1">Welcome to Learnio</h2>
+        <p class="text-muted mb-0">Learn Smarter. Study Faster.</p>
+    </div>
 </div>
 
-
+<div class="card border-0 shadow-sm p-4">
+    <h5 class="mb-2">Your AI Study Assistant</h5>
+    <p class="text-muted mb-0">
+        Subjects, materials, and study stats will appear here once you start adding content.
+    </p>
+</div>
 {% endblock %}
