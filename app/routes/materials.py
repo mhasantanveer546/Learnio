@@ -1,6 +1,7 @@
 import os
+import logging
 
-from flask import Blueprint, current_app, flash, redirect, request, url_for
+from flask import Blueprint, current_app, flash, redirect, request, url_for,jsonify
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
@@ -8,6 +9,7 @@ from app.extensions import db
 from app.forms.materials import UploadMaterialForm
 from app.models import Subject, StudyMaterial
 from app.services.upload_service import save_study_material
+from app.services.text_extraction_service import extract_text
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/materials")
 
@@ -81,3 +83,49 @@ def delete_material(material_id):
 
     flash("Study material deleted successfully.", "success")
     return redirect(url_for("subjects.view_subject", subject_id=subject_id))
+
+@materials_bp.route("/<int:material_id>/process", methods=["POST"])
+@login_required
+def process_material(material_id):
+    """
+    Extract text from an uploaded study material.
+    Returns JSON because it is called via fetch().
+    """
+    material = StudyMaterial.query.filter_by(
+        id=material_id, user_id=current_user.id
+    ).first_or_404()
+
+    # Immediately expose processing state
+    material.status = "processing"
+    db.session.commit()
+
+    filepath = os.path.join(
+        current_app.config["UPLOAD_FOLDER"],
+        "users",
+        f"user_{material.user_id}",
+        "notes",
+        material.filename,
+    )
+
+    try:
+        text = extract_text(filepath, material.file_type)
+        material.extracted_text = text
+        material.status = "ready"
+    except ValueError as e:
+        material.status = "failed"
+        current_app.logger.warning(f"Extraction failed for material {material.id}: {e}")
+
+    db.session.commit()
+    return jsonify({"status": material.status})
+
+
+@materials_bp.route("/<int:material_id>/status", methods=["GET"])
+@login_required
+def material_status(material_id):
+    """Returns the current processing status as JSON — polled by the
+    frontend while a material is 'processing'."""
+    material = StudyMaterial.query.filter_by(
+        id=material_id, user_id=current_user.id
+    ).first_or_404()
+
+    return jsonify({"status": material.status})
