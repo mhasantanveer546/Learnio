@@ -6,7 +6,9 @@
         <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'dashboard.dashboard' }}" href="{{ url_for('dashboard.dashboard') }}">
             Dashboard
         </a>
-        <a class="nav-link text-white-50" href="#">Subjects</a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('subjects.') }}" href="{{ url_for('subjects.list_subjects') }}">
+            Subjects
+        </a>
         <a class="nav-link text-white-50" href="#">Materials</a>
     </nav>
     {% endif %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit Subject" if is_edit else "New Subject" }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div class="card border-0 shadow-sm p-4" style="max-width: 480px; width: 100%;">
+        <h4 class="fw-semibold mb-3">
+            {{ "Edit Subject" if is_edit else "Create a New Subject" }}
+        </h4>
+
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g. Calculus II") }}
+                {% for error in form.name.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.color.label(class="form-label") }}
+                <div class="d-flex align-items-center gap-2">
+                    <input type="color"
+                           class="form-control form-control-color"
+                           id="color_picker"
+                           value="{{ form.color.data or '#2563EB' }}"
+                           onchange="document.getElementById('{{ form.color.id }}').value = this.value">
+                    {{ form.color(class="form-control" + (" is-invalid" if form.color.errors else "")) }}
+                </div>
+                {% for error in form.color.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+
+                <div class="d-flex gap-2 mt-2">
+                    {% for preset in ["#2563EB", "#4F46E5", "#7C3AED", "#10B981", "#F59E0B", "#EF4444"] %}
+                    <button type="button"
+                            class="rounded-circle border-0"
+                            style="width: 24px; height: 24px; background-color: {{ preset }}; cursor: pointer;"
+                            onclick="document.getElementById('{{ form.color.id }}').value = '{{ preset }}'; document.getElementById('color_picker').value = '{{ preset }}';">
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.icon.label(class="form-label") }}
+                {{ form.icon(class="form-control" + (" is-invalid" if form.icon.errors else ""), placeholder="Optional — e.g. 📐 or a short label") }}
+                {% for error in form.icon.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex gap-2">
+                {{ form.submit(class="btn btn-primary flex-fill") }}
+                <a href="{{ url_for('subjects.list_subjects') }}" class="btn btn-outline-secondary flex-fill">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
