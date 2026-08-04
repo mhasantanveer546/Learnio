@@ -24,7 +24,7 @@ class Config:
 
     # Upload constraints — one source of truth instead of every route
     # hardcoding its own limit later (Phase 3 will need this).
-    MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20 MB per request
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB per request
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
 

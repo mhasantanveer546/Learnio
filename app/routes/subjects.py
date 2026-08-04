@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Subject
 from app.forms.subjects import SubjectForm
+from app.forms.materials import UploadMaterialForm
 
 subjects_bp = Blueprint("subjects", __name__, url_prefix="/subjects")
 
@@ -77,3 +78,16 @@ def delete_subject(subject_id):
     db.session.commit()
     flash("Subject deleted successfully!", "success")
     return redirect(url_for("subjects.list_subjects"))
+
+@subjects_bp.route("/<int:subject_id>")
+@login_required
+def view_subject(subject_id):
+    subject = Subject.query.get_or_404(subject_id)
+    if subject.user_id != current_user.id:
+        abort(403)
+
+    upload_form = UploadMaterialForm()
+    upload_form.subject_id.choices = [(subject.id, subject.name)]
+    upload_form.subject_id.data = subject.id
+
+    return render_template("subjects/detail.html", subject=subject, upload_form=upload_form)

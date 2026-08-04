@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.forms.auth import ProfileForm, ChangePasswordForm
-from app.utils.file_utils import save_profile_picture
+from app.services.upload_service import save_profile_picture
 
 profile_bp = Blueprint("profile", __name__, url_prefix="/profile")
 
