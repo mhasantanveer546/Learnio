@@ -7,6 +7,7 @@ from app.extensions import db
 from app.forms.auth import ProfileForm, ChangePasswordForm
 from app.services.upload_service import save_profile_picture
 from app.utils.file_utils import get_profile_picture_filepath
+from app.models import User
 
 profile_bp = Blueprint("profile", __name__, url_prefix="/profile")
 

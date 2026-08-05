@@ -4,62 +4,40 @@
 {% block content %}
 <div class="d-flex justify-content-center">
     <div class="card border-0 shadow-sm p-4" style="max-width: 480px; width: 100%;">
+        <h4 class="fw-semibold mb-3">Your Profile</h4>
 
-        <div class="text-center mb-4">
-
-            {% if current_user.profile_picture %}
-                <img
-                    src="{{ url_for('profile.serve_profile_picture', user_id=current_user.id) }}"
-                    alt="Profile Picture"
-                    class="rounded-circle mb-3"
-                    width="80"
-                    height="80"
-                    style="object-fit: cover;"
-                >
-            {% endif %}
-
-            <h4 class="fw-semibold mb-0">Your Profile</h4>
-
-        </div>
+        {% if current_user.profile_picture %}
+            <img src="{{ url_for('profile.serve_profile_picture', user_id=current_user.id) }}"
+                 alt="Profile picture" class="rounded-circle mb-3" width="80" height="80" style="object-fit: cover;">
+        {% endif %}
 
         <form method="POST" enctype="multipart/form-data" novalidate>
-
             {{ form.hidden_tag() }}
 
             <div class="mb-3">
                 {{ form.username.label(class="form-label") }}
                 {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
-                {% for error in form.username.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+                {% for error in form.username.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
             </div>
 
             <div class="mb-3">
                 {{ form.email.label(class="form-label") }}
                 {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
-                {% for error in form.email.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+                {% for error in form.email.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
             </div>
 
             <div class="mb-3">
                 {{ form.profile_picture.label(class="form-label") }}
                 {{ form.profile_picture(class="form-control" + (" is-invalid" if form.profile_picture.errors else "")) }}
-                {% for error in form.profile_picture.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+                {% for error in form.profile_picture.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
             </div>
 
             {{ form.submit(class="btn btn-primary w-100") }}
-
         </form>
 
         <p class="text-center mt-3 mb-0">
-            <a href="{{ url_for('profile.change_password') }}">
-                Change Password
-            </a>
+            <a href="{{ url_for('profile.change_password') }}">Change Password</a>
         </p>
-
     </div>
 </div>
 {% endblock %}
