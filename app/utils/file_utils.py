@@ -1,3 +1,5 @@
+import os
+
 ALLOWED_EXTENSIONS = {
     "pdf": "pdf",
     "docx": "docx",
@@ -18,3 +20,15 @@ def get_file_extension(filename):
 def is_allowed_file(filename):
     ext = get_file_extension(filename)
     return ext in ALLOWED_EXTENSIONS
+
+def get_material_filepath(upload_folder, user_id, filename):
+    """Reconstructs the full disk path for a study material.
+    Single source of truth for this path — used by upload, delete,
+    process, and download, so the folder structure only ever needs
+    to change in one place."""
+    return os.path.join(upload_folder, "users", f"user_{user_id}", "notes", filename)
+
+
+def get_profile_picture_filepath(upload_folder, user_id, filename):
+    """Same idea, for profile pictures."""
+    return os.path.join(upload_folder, "users", f"user_{user_id}", "profile", filename)

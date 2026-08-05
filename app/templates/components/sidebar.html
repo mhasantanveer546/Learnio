@@ -9,7 +9,9 @@
         <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('subjects.') }}" href="{{ url_for('subjects.list_subjects') }}">
             Subjects
         </a>
-        <a class="nav-link text-white-50" href="#">Materials</a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('materials.') }}" href="{{ url_for('materials.list_materials') }}">
+            Materials
+        </a>
     </nav>
     {% endif %}
 </div>

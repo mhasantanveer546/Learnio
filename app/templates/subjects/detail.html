@@ -73,7 +73,9 @@
                                 Retry
                             </button>
                             {% endif %}
-
+                            <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-sm btn-outline-primary">
+                                Download
+                            </a>
                             <form method="POST" action="{{ url_for('materials.delete_material', material_id=material.id) }}" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>

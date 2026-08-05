@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, current_app
+import os
+
+from flask import Blueprint, render_template, redirect, url_for, flash, current_app,send_file,abort
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.forms.auth import ProfileForm, ChangePasswordForm
 from app.services.upload_service import save_profile_picture
+from app.utils.file_utils import get_profile_picture_filepath
 
 profile_bp = Blueprint("profile", __name__, url_prefix="/profile")
 
@@ -48,3 +51,26 @@ def change_password():
         return redirect(url_for("profile.view_profile"))
 
     return render_template("profile/change_password.html", form=form)
+
+@profile_bp.route("/picture/<int:user_id>", methods=["GET"])
+@login_required
+def serve_profile_picture(user_id):
+    """Serves a user's profile picture. Any logged-in user can view
+    any other user's profile picture (like a public avatar) — this is
+    a deliberate choice, unlike study materials which are strictly
+    private. If Learnio later adds public profiles/social features,
+    this is already the right shape; if not, no harm since profile
+    pictures aren't sensitive data."""
+    user = User.query.get_or_404(user_id)
+
+    if not user.profile_picture:
+        abort(404)
+
+    filepath = get_profile_picture_filepath(
+        current_app.config["UPLOAD_FOLDER"], user.id, user.profile_picture
+    )
+
+    if not os.path.exists(filepath):
+        abort(404)
+
+    return send_file(filepath)
