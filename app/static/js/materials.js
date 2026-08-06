@@ -1,3 +1,5 @@
+// ===== File processing (Phase 3, Step 2) =====
+
 async function processMaterial(materialId) {
     const badge = document.getElementById(`status-${materialId}`);
     if (!badge) return;
@@ -38,23 +40,103 @@ function updateBadge(badge, status) {
     badge.className = `badge ${classes[status] || "bg-secondary"}`;
 }
 
+// ===== Summary generation (Phase 4) =====
+// Same fire-and-poll pattern as file processing above, applied to
+// summaries instead of extraction.
+
+async function generateSummary(materialId) {
+    const badge = document.getElementById(`summary-status-${materialId}`);
+    const btn = document.querySelector(`.generate-summary-btn[data-material-id="${materialId}"]`);
+    if (!badge) return;
+
+    if (btn) btn.disabled = true;
+    updateSummaryBadge(badge, "processing");
+
+    try {
+        const response = await fetch(`/summaries/${materialId}/generate`, {
+            method: "POST",
+            headers: { "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content },
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            updateSummaryBadge(badge, "failed");
+            if (btn) btn.disabled = false;
+            return;
+        }
+
+        updateSummaryBadge(badge, data.status);
+        if (data.status === "processing") {
+            pollSummaryStatus(materialId, badge, btn);
+        } else if (btn) {
+            btn.disabled = false;
+        }
+    } catch (err) {
+        console.error("Failed to start summary generation:", err);
+        updateSummaryBadge(badge, "failed");
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function pollSummaryStatus(materialId, badge, btn) {
+    const interval = setInterval(async () => {
+        const response = await fetch(`/summaries/${materialId}/status`);
+        const data = await response.json();
+        updateSummaryBadge(badge, data.status);
+
+        if (data.status === "ready" || data.status === "failed") {
+            clearInterval(interval);
+            if (btn) btn.disabled = false;
+            if (data.status === "ready") {
+                // Reveal the "View Summary" link once ready, without
+                // requiring a full page reload.
+                const link = document.getElementById(`summary-link-${materialId}`);
+                if (link) link.classList.remove("d-none");
+            }
+        }
+    }, 2000);
+}
+
+function updateSummaryBadge(badge, status) {
+    const labels = { pending: "No summary yet", processing: "Generating…", ready: "Summary ready", failed: "Generation failed" };
+    const classes = { pending: "bg-secondary", processing: "bg-warning text-dark", ready: "bg-success", failed: "bg-danger" };
+
+    badge.textContent = labels[status] || status;
+    badge.className = `badge ${classes[status] || "bg-secondary"}`;
+}
+
+// ===== Wiring =====
+
 document.addEventListener("DOMContentLoaded", () => {
-    // pending materials: trigger processing for the first time
     document.querySelectorAll("[data-pending-material]").forEach((el) => {
         processMaterial(el.dataset.pendingMaterial);
     });
 
-    // processing materials (e.g. page was refreshed mid-extraction):
-    // only poll, never re-trigger extraction
     document.querySelectorAll("[data-processing-material]").forEach((el) => {
         const badge = document.getElementById(`status-${el.dataset.processingMaterial}`);
         pollStatus(el.dataset.processingMaterial, badge);
     });
 
-    // failed materials: manual retry button
     document.querySelectorAll(".retry-material-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
             processMaterial(btn.dataset.materialId);
         });
+    });
+
+    document.querySelectorAll(".generate-summary-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            generateSummary(btn.dataset.materialId);
+        });
+    });
+
+    // If a summary is already mid-generation when the page loads
+    // (e.g. refreshed while processing), resume polling instead of
+    // leaving the badge stuck.
+    document.querySelectorAll("[data-summary-processing]").forEach((el) => {
+        const materialId = el.dataset.summaryProcessing;
+        const badge = document.getElementById(`summary-status-${materialId}`);
+        const btn = document.querySelector(`.generate-summary-btn[data-material-id="${materialId}"]`);
+        if (btn) btn.disabled = true;
+        pollSummaryStatus(materialId, badge, btn);
     });
 });

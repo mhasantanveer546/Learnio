@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Summary — {{ material.original_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-semibold mb-1">{{ material.original_name }}</h2>
+        <p class="text-muted mb-0">AI-generated study summary</p>
+    </div>
+    <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}" class="btn btn-outline-secondary btn-sm">
+        ← Back to {{ material.subject.name }}
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+    <div id="summary-content" class="summary-markdown"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    // Summary content is stored as raw Markdown (see Summary.content).
+    // Rendered client-side with marked.js rather than converting to
+    // HTML server-side — keeps the stored data portable (e.g. Phase 12
+    // exports can reuse the raw Markdown directly for PDF/MD export).
+    const rawMarkdown = {{ summary.content | tojson }};
+    document.getElementById("summary-content").innerHTML = marked.parse(rawMarkdown);
+</script>
+{% endblock %}

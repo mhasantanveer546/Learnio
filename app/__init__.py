@@ -9,7 +9,7 @@ from app.routes.auth import auth_bp
 from app.routes.profile import profile_bp
 from app.routes.subjects import subjects_bp
 from app.routes.materials import materials_bp
-
+from app.routes.summaries import summaries_bp
 
 def create_app(config_name="development"):
     app = Flask(__name__)
@@ -33,6 +33,7 @@ def create_app(config_name="development"):
     app.register_blueprint(profile_bp)
     app.register_blueprint(subjects_bp)
     app.register_blueprint(materials_bp)
+    app.register_blueprint(summaries_bp)
 
     @app.errorhandler(404)
     def page_not_found(error):

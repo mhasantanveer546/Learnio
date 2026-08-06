@@ -16,3 +16,19 @@ body {
 .card {
     border-radius: 0.75rem;
 }
+
+.summary-markdown h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #2563EB;
+}
+
+.summary-markdown h1:first-child {
+    margin-top: 0;
+}
+
+.summary-markdown ul {
+    padding-left: 1.25rem;
+}

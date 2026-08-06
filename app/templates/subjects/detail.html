@@ -46,7 +46,7 @@
             {% if subject.materials %}
                 {% for material in subject.materials %}
                 <div class="card mb-3">
-                    <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
                             <h6 class="mb-1">{{ material.original_name }}</h6>
                             <small class="text-muted">
@@ -55,7 +55,7 @@
                                 {{ (material.file_size / 1024)|round(1) }} KB
                             </small>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span
                                 id="status-{{ material.id }}"
                                 class="badge {% if material.status == 'ready' %}bg-success{% elif material.status == 'processing' %}bg-warning text-dark{% elif material.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}"
@@ -73,9 +73,32 @@
                                 Retry
                             </button>
                             {% endif %}
+
+                            {% if material.status == "ready" %}
+                                <span id="summary-status-{{ material.id }}"
+                                      class="badge {% if material.summary and material.summary.status == 'ready' %}bg-success{% elif material.summary and material.summary.status == 'processing' %}bg-warning text-dark{% elif material.summary and material.summary.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}"
+                                      {% if material.summary and material.summary.status == "processing" %}data-summary-processing="{{ material.id }}"{% endif %}>
+                                    {% if material.summary and material.summary.status == "ready" %}Summary ready
+                                    {% elif material.summary and material.summary.status == "processing" %}Generating…
+                                    {% elif material.summary and material.summary.status == "failed" %}Generation failed
+                                    {% else %}No summary yet{% endif %}
+                                </span>
+
+                                <button class="btn btn-sm btn-outline-primary generate-summary-btn" data-material-id="{{ material.id }}">
+                                    {% if material.summary and material.summary.status == "ready" %}Regenerate{% else %}Generate Summary{% endif %}
+                                </button>
+
+                                <a id="summary-link-{{ material.id }}"
+                                   href="{{ url_for('summaries.view_summary', material_id=material.id) }}"
+                                   class="btn btn-sm btn-outline-success {% if not material.summary or material.summary.status != 'ready' %}d-none{% endif %}">
+                                    View Summary
+                                </a>
+                            {% endif %}
+
                             <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-sm btn-outline-primary">
                                 Download
                             </a>
+
                             <form method="POST" action="{{ url_for('materials.delete_material', material_id=material.id) }}" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
