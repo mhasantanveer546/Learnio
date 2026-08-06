@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, render_template, flash, redirect, url_for, request
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -10,6 +11,7 @@ from app.routes.profile import profile_bp
 from app.routes.subjects import subjects_bp
 from app.routes.materials import materials_bp
 from app.routes.summaries import summaries_bp
+from app.routes.chat import chat_bp
 
 def create_app(config_name="development"):
     app = Flask(__name__)
@@ -34,7 +36,8 @@ def create_app(config_name="development"):
     app.register_blueprint(subjects_bp)
     app.register_blueprint(materials_bp)
     app.register_blueprint(summaries_bp)
-
+    app.register_blueprint(chat_bp)
+    
     @app.errorhandler(404)
     def page_not_found(error):
         return render_template("errors/404.html"), 404
@@ -47,5 +50,9 @@ def create_app(config_name="development"):
     def file_too_large(error):
         flash("That file is too large. Maximum upload size is 50MB.", "danger")
         return redirect(request.referrer or url_for("dashboard.dashboard"))
+
+    @app.template_filter("from_json")
+    def from_json_filter(value):
+        return json.loads(value) if value else []
 
     return app

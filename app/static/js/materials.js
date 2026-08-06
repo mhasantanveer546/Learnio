@@ -14,6 +14,8 @@ async function processMaterial(materialId) {
 
         if (data.status === "processing") {
             pollStatus(materialId, badge);
+        } else if (data.status === "ready") {
+            revealSummaryControls(materialId);
         }
     } catch (err) {
         console.error("Failed to start processing:", err);
@@ -28,8 +30,20 @@ async function pollStatus(materialId, badge) {
 
         if (data.status === "ready" || data.status === "failed") {
             clearInterval(interval);
+
+            // The summary controls block was rendered hidden at page-load
+            // time (material wasn't ready yet) — reveal it now instead of
+            // requiring a manual refresh.
+            if (data.status === "ready") {
+                revealSummaryControls(materialId);
+            }
         }
     }, 2000);
+}
+
+function revealSummaryControls(materialId) {
+    const summaryControls = document.getElementById(`summary-controls-${materialId}`);
+    if (summaryControls) summaryControls.classList.remove("d-none");
 }
 
 function updateBadge(badge, status) {
@@ -41,8 +55,6 @@ function updateBadge(badge, status) {
 }
 
 // ===== Summary generation (Phase 4) =====
-// Same fire-and-poll pattern as file processing above, applied to
-// summaries instead of extraction.
 
 async function generateSummary(materialId) {
     const badge = document.getElementById(`summary-status-${materialId}`);
@@ -86,10 +98,13 @@ async function pollSummaryStatus(materialId, badge, btn) {
 
         if (data.status === "ready" || data.status === "failed") {
             clearInterval(interval);
-            if (btn) btn.disabled = false;
+            if (btn) {
+                btn.disabled = false;
+                if (data.status === "ready") {
+                    btn.textContent = "Regenerate";
+                }
+            }
             if (data.status === "ready") {
-                // Reveal the "View Summary" link once ready, without
-                // requiring a full page reload.
                 const link = document.getElementById(`summary-link-${materialId}`);
                 if (link) link.classList.remove("d-none");
             }
@@ -129,9 +144,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // If a summary is already mid-generation when the page loads
-    // (e.g. refreshed while processing), resume polling instead of
-    // leaving the badge stuck.
     document.querySelectorAll("[data-summary-processing]").forEach((el) => {
         const materialId = el.dataset.summaryProcessing;
         const badge = document.getElementById(`summary-status-${materialId}`);

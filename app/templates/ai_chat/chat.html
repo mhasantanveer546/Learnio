@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Chat — {{ subject.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    #chat-messages {
+        height: 60vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .chat-bubble {
+        max-width: 75%;
+        padding: 0.65rem 1rem;
+        border-radius: 1rem;
+        line-height: 1.45;
+    }
+
+    .chat-bubble.user {
+        align-self: flex-end;
+        background-color: #2563EB;
+        color: white;
+        border-bottom-right-radius: 0.25rem;
+    }
+
+    .chat-bubble.assistant {
+        align-self: flex-start;
+        background-color: #F1F5F9;
+        color: #1E293B;
+        border-bottom-left-radius: 0.25rem;
+    }
+
+    .chat-sources {
+        font-size: 0.75rem;
+        color: #64748B;
+        margin-top: 0.35rem;
+    }
+
+    .chat-typing {
+        align-self: flex-start;
+        color: #64748B;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-semibold mb-1">Chat — {{ subject.name }}</h2>
+        <p class="text-muted mb-0">Ask questions about your uploaded materials for this subject.</p>
+    </div>
+    <a href="{{ url_for('subjects.view_subject', subject_id=subject.id) }}" class="btn btn-outline-secondary btn-sm">
+        ← Back to {{ subject.name }}
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+    <div id="chat-messages">
+        {% if not messages %}
+            <div class="text-center text-muted py-5">
+                <p class="mb-0">No messages yet. Ask a question about your uploaded materials to get started.</p>
+            </div>
+        {% endif %}
+
+        {% for message in messages %}
+            <div class="chat-bubble {{ message.role }}">
+                {{ message.content }}
+                {% if message.role == "assistant" and message.sources %}
+                    {% set sources = message.sources | from_json %}
+                    {% if sources %}
+                        <div class="chat-sources">Sources: {{ sources | join(", ") }}</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <form id="chat-form" class="d-flex gap-2 mt-3 pt-3 border-top">
+        <input type="text" id="chat-input" class="form-control" placeholder="Ask a question about your materials..." autocomplete="off" required>
+        <button type="submit" class="btn btn-primary px-4">Send</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const CHAT_SUBJECT_ID = {{ subject.id }};
+</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

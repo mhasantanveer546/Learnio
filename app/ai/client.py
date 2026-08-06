@@ -12,7 +12,11 @@ def get_gemini_client():
         raise RuntimeError(
             "GEMINI_API_KEY is not set. Add it to your .env file."
         )
-
+    # Using the "-latest" alias rather than a pinned version (e.g. gemini-2.5-flash)
+    # deliberately — pinned model versions get gated to "existing users only" as
+    # Google rolls out newer generations, causing 404s on fresh API keys/projects.
+    # The alias always resolves to whatever flash-tier model your account currently
+    # has access to, avoiding this entire class of breakage.
     genai.configure(api_key=api_key)
     return genai.GenerativeModel("gemini-flash-latest")
 

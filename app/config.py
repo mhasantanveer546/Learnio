@@ -23,9 +23,15 @@ class Config:
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
 
     # Upload constraints — one source of truth instead of every route
-    # hardcoding its own limit later (Phase 3 will need this).
+    # hardcoding its own limit.
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB per request
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+
+    # Phase 5 — per-subject FAISS indexes + their metadata JSON files
+    # live here. Matches the original project spec's file structure
+    # (app/static/faiss_index/), kept gitignored since these are
+    # generated artifacts, not source.
+    FAISS_INDEX_FOLDER = os.path.join(BASE_DIR, "app", "static", "faiss_index")
 
 
 class DevelopmentConfig(Config):

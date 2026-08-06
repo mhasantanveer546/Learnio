@@ -9,6 +9,7 @@ from app.forms.materials import UploadMaterialForm
 from app.models import Subject, StudyMaterial
 from app.services.upload_service import save_study_material
 from app.services.text_extraction_service import extract_text
+from app.services.chat_service import index_material
 from app.utils.file_utils import get_material_filepath
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/materials")
@@ -17,9 +18,6 @@ materials_bp = Blueprint("materials", __name__, url_prefix="/materials")
 @materials_bp.route("/", methods=["GET"])
 @login_required
 def list_materials():
-    """Cross-subject materials view — every file the user owns, with
-    optional filters. This is the page the sidebar's 'Materials' link
-    points to."""
     query = StudyMaterial.query.filter_by(user_id=current_user.id)
 
     subject_filter = request.args.get("subject_id", type=int)
@@ -89,9 +87,6 @@ def upload_material():
 @materials_bp.route("/<int:material_id>/download", methods=["GET"])
 @login_required
 def download_material(material_id):
-    """Authenticated file serving — the whole reason uploads/ lives
-    outside static/. Ownership check happens before a single byte
-    is ever streamed back."""
     material = StudyMaterial.query.filter_by(
         id=material_id, user_id=current_user.id
     ).first_or_404()
@@ -128,11 +123,22 @@ def process_material(material_id):
         text = extract_text(filepath, material.file_type)
         material.extracted_text = text
         material.status = "ready"
+        db.session.commit()
+
+        # Phase 5 — index for RAG chat now that extracted text exists.
+        # Kept in its own try/except so an indexing failure never undoes
+        # a successful extraction; the material is still fully usable
+        # (viewable, downloadable, summarizable) even if this step fails.
+        try:
+            index_material(material)
+        except Exception as e:
+            current_app.logger.warning(f"Indexing failed for material {material.id}: {e}")
+
     except ValueError as e:
         material.status = "failed"
         current_app.logger.warning(f"Extraction failed for material {material.id}: {e}")
+        db.session.commit()
 
-    db.session.commit()
     return jsonify({"status": material.status})
 
 
