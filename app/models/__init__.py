@@ -5,6 +5,11 @@ from app.models.study_material import StudyMaterial
 from app.models.summary import Summary
 from app.models.chat import ChatSession, ChatMessage
 from app.models.quiz import Quiz, QuizQuestion, QuizAttempt, QuizAnswer
+from app.models.flashcard import FlashcardSet, Flashcard
 
 
-__all__ = ["User", "Subject", "StudyMaterial", "Summary","ChatSession", "ChatMessage","Quiz", "QuizQuestion", "QuizAttempt", "QuizAnswer"]
+__all__ = [
+    "User", "Subject", "StudyMaterial", "Summary", "ChatSession", "ChatMessage",
+    "Quiz", "QuizQuestion", "QuizAttempt", "QuizAnswer",
+    "FlashcardSet", "Flashcard",
+]

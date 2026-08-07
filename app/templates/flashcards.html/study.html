@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Flashcards — {{ material.original_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-semibold mb-1">Flashcards</h2>
+        <p class="text-muted mb-0">{{ material.original_name }}</p>
+    </div>
+    <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}" class="btn btn-outline-secondary btn-sm">
+        ← Back to Subject
+    </a>
+</div>
+
+<div class="d-flex justify-content-center">
+    <div style="max-width: 640px; width: 100%;">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted" id="card-position">Card 1 of {{ flashcard_set.cards|length }}</span>
+            <span class="text-muted" id="learned-count">{{ flashcard_set.learned_count }} learned</span>
+        </div>
+
+        <div class="progress mb-4" style="height: 6px;">
+            <div class="progress-bar bg-success" id="progress-bar" role="progressbar" style="width: 0%;"></div>
+        </div>
+
+        <div id="flashcard-scene" data-card-index="0">
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-face flashcard-front">
+                    <p id="card-front-text" class="mb-0"></p>
+                    <span class="flashcard-hint">Tap to flip</span>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <p id="card-back-text" class="mb-0"></p>
+                    <span class="flashcard-hint">Tap to flip back</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-4">
+            <button class="btn btn-outline-danger btn-sm" id="rate-hard">Hard</button>
+            <button class="btn btn-outline-warning btn-sm" id="rate-medium">Medium</button>
+            <button class="btn btn-outline-success btn-sm" id="rate-easy">Easy</button>
+        </div>
+
+        <div class="form-check form-switch d-flex justify-content-center mt-3">
+            <input class="form-check-input me-2" type="checkbox" id="mark-learned">
+            <label class="form-check-label" for="mark-learned">Mark as learned</label>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-outline-primary" id="prev-card">← Previous</button>
+            <button class="btn btn-primary" id="next-card">Next →</button>
+        </div>
+
+    </div>
+</div>
+
+<script id="flashcard-data" type="application/json">
+{
+    "cards": [
+        {% for card in flashcard_set.cards %}
+        {
+            "id": {{ card.id }},
+            "front": {{ card.front_text|tojson }},
+            "back": {{ card.back_text|tojson }},
+            "difficulty": {{ card.difficulty|tojson }},
+            "is_learned": {{ card.is_learned|tojson }}
+        }{{ "," if not loop.last }}
+        {% endfor %}
+    ]
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/flashcards.js') }}"></script>
+{% endblock %}

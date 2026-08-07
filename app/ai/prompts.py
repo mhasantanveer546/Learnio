@@ -88,3 +88,36 @@ Rules:
 STUDY MATERIAL:
 {text}
 """
+
+def build_flashcard_prompt(extracted_text, num_cards=15):
+    """Builds a prompt requesting flashcard pairs as structured JSON,
+    same reasoning as build_quiz_prompt — this gets parsed into
+    Flashcard rows, so it needs to be reliable JSON, not prose."""
+
+    max_chars = 30000
+    text = extracted_text[:max_chars]
+
+    return f"""You are creating flashcards for a university student based on their study material.
+
+Generate EXACTLY {num_cards} flashcards covering the most important concepts, terms, and facts in the material below. Each flashcard should test ONE clear concept — a term and its definition, a concept and its explanation, or a fact and its detail. Avoid overly long fronts or backs; keep them concise enough to read at a glance.
+
+Return ONLY valid JSON (no markdown formatting, no code fences, no commentary) matching this exact structure:
+
+{{
+  "flashcards": [
+    {{
+      "front": "short question or term",
+      "back": "concise answer or definition"
+    }}
+  ]
+}}
+
+Rules:
+- "front" should be a question, term, or prompt — not a full sentence restating the answer.
+- "back" should be a direct, concise answer — 1-3 sentences maximum.
+- Do not invent facts not present in the text below.
+- Do not create duplicate or near-duplicate cards.
+
+STUDY MATERIAL:
+{text}
+"""

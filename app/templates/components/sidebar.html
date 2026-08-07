@@ -12,6 +12,12 @@
         <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('materials.') }}" href="{{ url_for('materials.list_materials') }}">
             Materials
         </a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('quizzes.') }}" href="{{ url_for('materials.list_materials') }}">
+            Quizzes
+        </a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('flashcards.') }}" href="{{ url_for('materials.list_materials') }}">
+            Flashcards
+        </a>
     </nav>
     {% endif %}
 </div>

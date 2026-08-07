@@ -152,3 +152,58 @@ document.addEventListener("DOMContentLoaded", () => {
         pollSummaryStatus(materialId, badge, btn);
     });
 });
+// ===== Flashcard generation (Phase 7) =====
+
+document.querySelectorAll(".generate-flashcards-btn").forEach(btn => {
+    btn.addEventListener("click", () => generateFlashcards(btn.dataset.materialId));
+});
+
+async function generateFlashcards(materialId) {
+    const badge = document.getElementById(`flashcard-status-${materialId}`);
+    if (!badge) return;
+
+    try {
+        const response = await fetch(`/flashcards/${materialId}/generate`, {
+            method: "POST",
+            headers: { "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content },
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            badge.textContent = data.error;
+            badge.className = "badge bg-danger";
+            return;
+        }
+
+        updateFlashcardBadge(badge, data.status);
+        if (data.status === "processing") {
+            pollFlashcardStatus(materialId, badge);
+        }
+    } catch (err) {
+        console.error("Failed to start flashcard generation:", err);
+    }
+}
+
+function pollFlashcardStatus(materialId, badge) {
+    const interval = setInterval(async () => {
+        const response = await fetch(`/flashcards/${materialId}/status`);
+        const data = await response.json();
+        updateFlashcardBadge(badge, data.status);
+
+        if (data.status === "ready" || data.status === "failed") {
+            clearInterval(interval);
+            if (data.status === "ready") {
+                const link = document.getElementById(`flashcard-link-${materialId}`);
+                if (link) link.classList.remove("d-none");
+            }
+        }
+    }, 2000);
+}
+
+function updateFlashcardBadge(badge, status) {
+    const labels = { pending: "No flashcards yet", processing: "Generating…", ready: "Flashcards ready", failed: "Generation failed" };
+    const classes = { pending: "bg-secondary", processing: "bg-warning text-dark", ready: "bg-success", failed: "bg-danger" };
+
+    badge.textContent = labels[status] || status;
+    badge.className = `badge ${classes[status] || "bg-secondary"}`;
+}

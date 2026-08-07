@@ -13,6 +13,7 @@ from app.routes.materials import materials_bp
 from app.routes.summaries import summaries_bp
 from app.routes.chat import chat_bp
 from app.routes.quizzes import quizzes_bp
+from app.routes.flashcards import flashcards_bp
 
 
 def create_app(config_name="development"):
@@ -40,7 +41,8 @@ def create_app(config_name="development"):
     app.register_blueprint(summaries_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(quizzes_bp)
-    
+    app.register_blueprint(flashcards_bp)
+
     @app.errorhandler(404)
     def page_not_found(error):
         return render_template("errors/404.html"), 404

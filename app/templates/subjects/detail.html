@@ -103,6 +103,25 @@
                                 <a href="{{ url_for('quizzes.configure_quiz', material_id=material.id) }}" class="btn btn-sm btn-outline-warning">
                                     📝 Quiz
                                 </a>
+
+                                <span id="flashcard-status-{{ material.id }}"
+                                    class="badge {% if material.flashcard_set and material.flashcard_set.status == 'ready' %}bg-success{% elif material.flashcard_set and material.flashcard_set.status == 'processing' %}bg-warning text-dark{% elif material.flashcard_set and material.flashcard_set.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}"
+                                    {% if material.flashcard_set and material.flashcard_set.status == "processing" %}data-flashcard-processing="{{ material.id }}"{% endif %}>
+                                    {% if material.flashcard_set and material.flashcard_set.status == "ready" %}Flashcards ready
+                                    {% elif material.flashcard_set and material.flashcard_set.status == "processing" %}Generating…
+                                    {% elif material.flashcard_set and material.flashcard_set.status == "failed" %}Generation failed
+                                    {% else %}No flashcards yet{% endif %}
+                                </span>
+
+                                <button class="btn btn-sm btn-outline-primary generate-flashcards-btn" data-material-id="{{ material.id }}">
+                                    {% if material.flashcard_set and material.flashcard_set.status == "ready" %}Regenerate{% else %}Generate Flashcards{% endif %}
+                                </button>
+
+                                <a id="flashcard-link-{{ material.id }}"
+                                href="{{ url_for('flashcards.study_flashcards', material_id=material.id) }}"
+                                class="btn btn-sm btn-outline-success {% if not material.flashcard_set or material.flashcard_set.status != 'ready' %}d-none{% endif %}">
+                                    🗂 Study Flashcards
+                                </a>
                             </div>
 
                             <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-sm btn-outline-primary">
