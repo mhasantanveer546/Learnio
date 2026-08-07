@@ -1,0 +1,20 @@
+/* Glassmorphism Card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Soft Backgrounds for Badges/Icons */
+.bg-primary-soft { background-color: rgba(37, 99, 235, 0.1); }
+.bg-success-soft { background-color: rgba(16, 185, 129, 0.1); }
+.bg-warning-soft { background-color: rgba(245, 158, 11, 0.1); }
+.bg-danger-soft { background-color: rgba(239, 68, 68, 0.1); }
+
+/* Text utilities */
+.text-sm { font-size: 0.85rem; }
+.font-weight-bold { font-weight: 700; }
+
+/* Pill Buttons */
+.btn-pill { border-radius: 50rem !important; padding: 0.375rem 1.2rem; }

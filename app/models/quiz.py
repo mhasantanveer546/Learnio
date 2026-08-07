@@ -61,6 +61,12 @@ class QuizAttempt(db.Model):
     def __repr__(self):
         return f"<QuizAttempt {self.id} for quiz {self.quiz_id}>"
 
+    @property
+    def score_percentage(self):
+        if self.score is not None and self.total > 0:
+            return round((self.score / self.total) * 100)
+        return 0
+
 
 class QuizAnswer(db.Model):
     __tablename__ = "quiz_answers"

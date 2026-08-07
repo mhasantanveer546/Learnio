@@ -87,10 +87,38 @@ def self_grade_route(answer_id):
 @login_required
 def quiz_history(material_id):
     material = StudyMaterial.query.filter_by(id=material_id, user_id=current_user.id).first_or_404()
+
     attempts = (
         QuizAttempt.query.join(Quiz)
         .filter(Quiz.material_id == material.id, QuizAttempt.user_id == current_user.id)
         .order_by(QuizAttempt.started_at.desc())
         .all()
     )
-    return render_template("quizzes/history.html", material=material, attempts=attempts)
+
+    total = len(attempts)
+    if total > 0:
+        avg_score = sum(a.score_percentage for a in attempts) / total
+        best_score = max(a.score_percentage for a in attempts)
+    else:
+        avg_score = 0
+        best_score = 0
+
+    stats = {
+        "total_quizzes": total,
+        "average_score": round(avg_score),
+        "best_score": round(best_score),
+    }
+
+    chronological = list(reversed(attempts))
+    chart_data = {
+        "labels": [a.started_at.strftime("%b %d") for a in chronological],
+        "scores": [a.score_percentage for a in chronological],
+    }
+
+    return render_template(
+        "quizzes/history.html",
+        material=material,
+        attempts=attempts,
+        stats=stats,
+        chart_data=chart_data,
+    )
