@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Quiz History{% endblock %}
+
+{% block content %}
+<h4 class="fw-semibold mb-3">Quiz History — {{ material.original_name }}</h4>
+
+{% if attempts %}
+<div class="list-group">
+    {% for attempt in attempts %}
+    <a href="{{ url_for('quizzes.review_attempt', attempt_id=attempt.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        <span>{{ attempt.started_at.strftime("%b %d, %Y") }}</span>
+        <span class="fw-semibold">{{ attempt.score }} / {{ attempt.total }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">No quiz attempts yet.</div>
+{% endif %}
+{% endblock %}

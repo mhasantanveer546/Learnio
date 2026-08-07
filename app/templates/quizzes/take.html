@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-semibold mb-0">{{ quiz.title }}</h4>
+    <div id="quiz-timer" class="fw-semibold text-primary">10:00</div>
+</div>
+
+<div class="progress mb-4" style="height: 6px;">
+    <div id="quiz-progress" class="progress-bar" style="width: 0%;"></div>
+</div>
+
+<form id="quiz-form" method="POST" action="{{ url_for('quizzes.submit_quiz', attempt_id=attempt.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% for question in quiz.questions %}
+    <div class="quiz-question card border-0 shadow-sm p-4 mb-3" data-index="{{ loop.index0 }}" {% if not loop.first %}style="display: none;"{% endif %}>
+        <p class="text-muted small mb-2">Question {{ loop.index }} of {{ quiz.questions|length }}</p>
+        <h5 class="mb-3">{{ question.question_text }}</h5>
+
+        {% if question.question_type == "mcq" %}
+            {% set options = question.options | from_json %}
+            {% for option in options %}
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}-{{ loop.index0 }}" value="{{ option[0] }}">
+                <label class="form-check-label" for="q{{ question.id }}-{{ loop.index0 }}">{{ option }}</label>
+            </div>
+            {% endfor %}
+        {% elif question.question_type == "true_false" %}
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}-true" value="true">
+                <label class="form-check-label" for="q{{ question.id }}-true">True</label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}-false" value="false">
+                <label class="form-check-label" for="q{{ question.id }}-false">False</label>
+            </div>
+        {% else %}
+            <textarea class="form-control" name="{{ question.id }}" rows="4" placeholder="Type your answer..."></textarea>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between">
+        <button type="button" id="quiz-prev" class="btn btn-outline-secondary" disabled>← Previous</button>
+        <button type="button" id="quiz-next" class="btn btn-primary">Next →</button>
+        <button type="submit" id="quiz-submit" class="btn btn-success" style="display: none;">Submit Quiz</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const QUIZ_TOTAL_QUESTIONS = {{ quiz.questions|length }};
+    const QUIZ_TIME_LIMIT_SECONDS = 600; // 10 minutes flat — configurable later
+</script>
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}

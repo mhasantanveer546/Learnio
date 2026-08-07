@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Quiz Results{% endblock %}
+
+{% block content %}
+
+<div class="card border-0 shadow-sm p-4 mb-4 text-center">
+    {% if attempt.score is not none and attempt.total %}
+        <h3 class="fw-semibold mb-1">
+            {{ attempt.score }} / {{ attempt.total }}
+        </h3>
+        <p class="text-muted mb-0">
+            {{ ((attempt.score / attempt.total) * 100)|round(0) }}%
+        </p>
+    {% else %}
+        <h3 class="fw-semibold mb-1">Quiz Review</h3>
+        <p class="text-muted mb-0">
+            Your final score will be available after grading is complete.
+        </p>
+    {% endif %}
+</div>
+
+{% for answer in attempt.answers %}
+
+<div class="card border-0 shadow-sm p-4 mb-3">
+
+<p class="text-muted small mb-1">
+    Question {{ loop.index }}
+    &middot;
+    {{ answer.question.question_type|replace("_", " ")|capitalize }}
+</p>
+
+<h6 class="mb-3">{{ answer.question.question_text }}</h6>
+
+{% if answer.question.question_type == "mcq" %}
+
+    {% set options = answer.question.options | from_json %}
+    {% set submitted_option = options
+        | selectattr("0", "equalto", answer.submitted_answer)
+        | list
+        | first %}
+    {% set correct_option = options
+        | selectattr("0", "equalto", answer.question.correct_answer)
+        | list
+        | first %}
+
+    <p class="mb-1">
+        <strong>Your answer:</strong>
+        {{ submitted_option or "(no answer)" }}
+    </p>
+
+    <p class="mb-2">
+        <strong>Correct answer:</strong>
+        {{ correct_option }}
+    </p>
+
+    {% if answer.is_correct %}
+        <span class="badge bg-success">Correct</span>
+    {% else %}
+        <span class="badge bg-danger">Incorrect</span>
+    {% endif %}
+
+{% elif answer.question.question_type == "true_false" %}
+
+    <p class="mb-1">
+        <strong>Your answer:</strong>
+        {% if answer.submitted_answer %}
+            {{ answer.submitted_answer|capitalize }}
+        {% else %}
+            (no answer)
+        {% endif %}
+    </p>
+
+    <p class="mb-2">
+        <strong>Correct answer:</strong>
+        {{ answer.question.correct_answer|capitalize }}
+    </p>
+
+    {% if answer.is_correct %}
+        <span class="badge bg-success">Correct</span>
+    {% else %}
+        <span class="badge bg-danger">Incorrect</span>
+    {% endif %}
+
+{% else %}
+
+    <p class="mb-1">
+        <strong>Your answer:</strong>
+        {{ answer.submitted_answer or "(no answer)" }}
+    </p>
+
+    <p class="mb-2">
+        <strong>Suggested answer:</strong>
+        {{ answer.question.correct_answer }}
+    </p>
+
+    {% if answer.is_correct is none %}
+
+        <div
+            class="btn-group btn-group-sm self-grade-group"
+            data-answer-id="{{ answer.id }}"
+        >
+            <button
+                class="btn btn-outline-success grade-btn"
+                data-correct="true"
+            >
+                ✓ I got it right
+            </button>
+
+            <button
+                class="btn btn-outline-danger grade-btn"
+                data-correct="false"
+            >
+                ✗ I got it wrong
+            </button>
+        </div>
+
+    {% elif answer.is_correct %}
+
+        <span class="badge bg-success">
+            Marked correct
+        </span>
+
+    {% else %}
+
+        <span class="badge bg-danger">
+            Marked incorrect
+        </span>
+
+    {% endif %}
+
+{% endif %}
+
+</div>
+{% endfor %}
+
+<a
+href="{{ url_for('quizzes.quiz_history', material_id=attempt.quiz.material_id) }}"
+class="btn btn-outline-secondary"
+
+>
+
+View Quiz History
+
+</a>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+
+{% endblock %}

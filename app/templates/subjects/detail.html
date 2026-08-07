@@ -100,6 +100,9 @@
                                 <a href="{{ url_for('chat.view_chat', material_id=material.id) }}" class="btn btn-sm btn-outline-info">
                                     💬 Chat
                                 </a>
+                                <a href="{{ url_for('quizzes.configure_quiz', material_id=material.id) }}" class="btn btn-sm btn-outline-warning">
+                                    📝 Quiz
+                                </a>
                             </div>
 
                             <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-sm btn-outline-primary">
