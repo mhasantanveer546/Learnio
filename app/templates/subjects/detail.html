@@ -14,9 +14,7 @@
         </div>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ url_for('chat.view_chat', subject_id=subject.id) }}" class="btn btn-primary btn-sm">
-            💬 Chat with Materials
-        </a>
+        
         <a href="{{ url_for('subjects.list_subjects') }}" class="btn btn-outline-secondary btn-sm">
             ← Back to Subjects
         </a>
@@ -80,6 +78,7 @@
                             {% endif %}
 
                             <div id="summary-controls-{{ material.id }}" class="d-flex align-items-center gap-2 {% if material.status != 'ready' %}d-none{% endif %}">
+                                
                                 <span id="summary-status-{{ material.id }}"
                                       class="badge {% if material.summary and material.summary.status == 'ready' %}bg-success{% elif material.summary and material.summary.status == 'processing' %}bg-warning text-dark{% elif material.summary and material.summary.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}"
                                       {% if material.summary and material.summary.status == "processing" %}data-summary-processing="{{ material.id }}"{% endif %}>
@@ -97,6 +96,9 @@
                                    href="{{ url_for('summaries.view_summary', material_id=material.id) }}"
                                    class="btn btn-sm btn-outline-success {% if not material.summary or material.summary.status != 'ready' %}d-none{% endif %}">
                                     View Summary
+                                </a>
+                                <a href="{{ url_for('chat.view_chat', material_id=material.id) }}" class="btn btn-sm btn-outline-info">
+                                    💬 Chat
                                 </a>
                             </div>
 

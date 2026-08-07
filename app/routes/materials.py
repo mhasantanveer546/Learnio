@@ -9,7 +9,7 @@ from app.forms.materials import UploadMaterialForm
 from app.models import Subject, StudyMaterial
 from app.services.upload_service import save_study_material
 from app.services.text_extraction_service import extract_text
-from app.services.chat_service import index_material
+from app.services.chat_service import index_material,remove_material_index
 from app.utils.file_utils import get_material_filepath
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/materials")
@@ -166,6 +166,10 @@ def delete_material(material_id):
         os.remove(filepath)
 
     subject_id = material.subject_id
+    try:
+        remove_material_index(material)
+    except Exception as e:
+        current_app.logger.warning(f"Failed to remove FAISS index for material {material.id}: {e}")
     db.session.delete(material)
     db.session.commit()
 

@@ -3,9 +3,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("chat-input");
     const messagesEl = document.getElementById("chat-messages");
 
+    const modeDescriptions = {
+        study: "Study Mode only answers using your uploaded material and says so if it can't find something.",
+        solve: "Solve Mode uses your material as context but can reason and generate solutions beyond it — e.g. writing code for an assignment.",
+    };
+
+    const modeLabels = { study: "📚 Study", solve: "🛠️ Solve" };
+
+    document.querySelectorAll('input[name="chat-mode"]').forEach((radio) => {
+        radio.addEventListener("change", () => {
+            document.getElementById("mode-description").textContent = modeDescriptions[radio.value];
+        });
+    });
+
+    function getSelectedMode() {
+        const checked = document.querySelector('input[name="chat-mode"]:checked');
+        return checked ? checked.value : "study";
+    }
+
     if (!form) return;
 
-    // Scroll to the latest message on load
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
     form.addEventListener("submit", async (e) => {
@@ -13,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const question = input.value.trim();
         if (!question) return;
 
+        const mode = getSelectedMode();
         appendMessage("user", question);
         input.value = "";
         input.disabled = true;
@@ -20,26 +38,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const typingEl = appendTyping();
 
         try {
-            const response = await fetch(`/chat/${CHAT_SUBJECT_ID}/send`, {
+            const response = await fetch(`/chat/${CHAT_MATERIAL_ID}/send`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content,
                 },
-                body: JSON.stringify({ question }),
+                body: JSON.stringify({ question, mode }),
             });
 
             const data = await response.json();
             typingEl.remove();
 
             if (data.error) {
-                appendMessage("assistant", `⚠️ ${data.error}`);
+                appendMessage("assistant", `⚠️ ${data.error}`, null, mode);
             } else {
-                appendMessage("assistant", data.reply, data.sources);
+                appendMessage("assistant", data.reply, data.sources, mode);
             }
         } catch (err) {
             typingEl.remove();
-            appendMessage("assistant", "⚠️ Something went wrong. Please try again.");
+            appendMessage("assistant", "⚠️ Something went wrong. Please try again.", null, mode);
             console.error("Chat request failed:", err);
         } finally {
             input.disabled = false;
@@ -54,27 +72,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function formatMessage(text) {
-        // Escape first — nothing in the raw AI/user text is ever trusted
-        // as real HTML. Only AFTER escaping do we selectively re-introduce
-        // a small, safe set of formatting tags ourselves.
-        let safe = escapeHtml(text);
+        // Pull out fenced code blocks FIRST and stash them, so the
+        // escaping/formatting passes below never touch their contents
+        // (code shouldn't have ** or * interpreted as bold/bullets).
+        const codeBlocks = [];
+        let working = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+            const index = codeBlocks.length;
+            codeBlocks.push(escapeHtml(code.trim()));
+            return `\u0000CODEBLOCK${index}\u0000`;
+        });
 
-        safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");   // **bold**
-        safe = safe.replace(/`(.+?)`/g, "<code>$1</code>");             // `code`
-        safe = safe.replace(/\n\s*\*\s+(.+)/g, "<br>&bull; $1");        // * bullet lines
-        safe = safe.replace(/\n/g, "<br>");                             // remaining newlines
+        let safe = escapeHtml(working);
+
+        safe = safe.replace(/^### (.+)$/gm, "<strong class='d-block mt-2 mb-1'>$1</strong>");
+        safe = safe.replace(/^## (.+)$/gm, "<strong class='d-block mt-2 mb-1' style='font-size:1.05em'>$1</strong>");
+        safe = safe.replace(/^# (.+)$/gm, "<strong class='d-block mt-2 mb-1' style='font-size:1.1em'>$1</strong>");
+        safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        safe = safe.replace(/`(.+?)`/g, "<code>$1</code>");
+        safe = safe.replace(/\n\s*\*\s+(.+)/g, "<br>&bull; $1");
+        safe = safe.replace(/\n/g, "<br>");
+
+        // Restore code blocks as proper <pre><code> elements
+        safe = safe.replace(/\u0000CODEBLOCK(\d+)\u0000/g, (match, index) => {
+            return `<pre class="bg-dark text-light p-2 rounded mt-2 mb-2" style="overflow-x:auto;"><code>${codeBlocks[index]}</code></pre>`;
+        });
 
         return safe;
     }
 
-    function appendMessage(role, content, sources) {
-        // Clear the "no messages yet" empty state on first real message
+    function appendMessage(role, content, sources, mode) {
         const emptyState = messagesEl.querySelector(".text-center.text-muted");
         if (emptyState) emptyState.remove();
 
         const bubble = document.createElement("div");
         bubble.className = `chat-bubble ${role}`;
         bubble.innerHTML = formatMessage(content);
+
+        if (role === "assistant" && mode) {
+            const modeTag = document.createElement("div");
+            modeTag.className = "chat-sources";
+            modeTag.textContent = modeLabels[mode] || mode;
+            bubble.insertBefore(modeTag, bubble.firstChild);
+        }
 
         if (role === "assistant" && sources && sources.length > 0) {
             const sourceEl = document.createElement("div");

@@ -1,25 +1,26 @@
 from app.ai.client import generate_content
-from app.ai.context_builder import build_prompt
+from app.ai.context_builder import build_prompt, build_solve_prompt
 from app.ai.vector_store import search_index
 
 
-def answer_question(faiss_folder, subject_id, question, top_k=5):
-    """The full RAG pipeline: retrieve → build constrained prompt →
-    generate. Returns the answer plus which materials were cited."""
-    retrieved = search_index(faiss_folder, subject_id, question, top_k=top_k)
+def answer_question(faiss_folder, material_id, question, mode="study", top_k=5):
+    """RAG pipeline scoped to a single material.
 
-    if not retrieved:
+    mode="study" (default): strictly grounded, refuses to answer
+    beyond what's retrieved — the original, trustworthy behavior.
+    mode="solve": uses the material as context but allows Gemini to
+    reason/generate solutions beyond what's literally in the text."""
+    retrieved = search_index(faiss_folder, material_id, question, top_k=top_k)
+
+    if not retrieved and mode == "study":
         return {
-            "answer": "I don't have any indexed study materials for this subject yet. Upload and process some materials first.",
+            "answer": "This material hasn't been indexed yet, or has no searchable content.",
             "sources": [],
         }
 
-    prompt = build_prompt(question, retrieved)
+    prompt = build_solve_prompt(question, retrieved) if mode == "solve" else build_prompt(question, retrieved)
     answer = generate_content(prompt)
 
-    # Dict comprehension dedupes by material_id while preserving one
-    # display name per source — a student might retrieve 3 chunks from
-    # the same PDF, but we only want to cite it once.
     sources = list({chunk["material_id"]: chunk["material_name"] for chunk in retrieved}.values())
 
     return {"answer": answer, "sources": sources}

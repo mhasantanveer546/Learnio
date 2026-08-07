@@ -9,57 +9,44 @@ from app.ai.embeddings import embed_texts, embed_query
 INDEX_DIMENSION = 384  # matches all-MiniLM-L6-v2's output size
 
 
-def _index_path(faiss_folder, subject_id):
-    return os.path.join(faiss_folder, f"subject_{subject_id}.index")
+def _index_path(faiss_folder, material_id):
+    return os.path.join(faiss_folder, f"material_{material_id}.index")
 
 
-def _meta_path(faiss_folder, subject_id):
-    return os.path.join(faiss_folder, f"subject_{subject_id}_meta.json")
+def _meta_path(faiss_folder, material_id):
+    return os.path.join(faiss_folder, f"material_{material_id}_meta.json")
 
 
-def load_or_create_index(faiss_folder, subject_id):
+def build_material_index(faiss_folder, material_id, material_name, chunks):
+    """Builds a fresh, self-contained index for a single material.
+    Unlike the old per-subject scheme, this always creates from
+    scratch — a material's index never needs incremental appends,
+    since it's only ever indexed once (or fully rebuilt on retry)."""
     os.makedirs(faiss_folder, exist_ok=True)
-    index_path = _index_path(faiss_folder, subject_id)
-    meta_path = _meta_path(faiss_folder, subject_id)
 
-    if os.path.exists(index_path) and os.path.exists(meta_path):
-        index = faiss.read_index(index_path)
-        with open(meta_path, "r", encoding="utf-8") as f:
-            metadata = json.load(f)
-    else:
-        index = faiss.IndexFlatL2(INDEX_DIMENSION)
-        metadata = []  # metadata[i] describes the chunk stored at vector i
-
-    return index, metadata
-
-
-def save_index(faiss_folder, subject_id, index, metadata):
-    os.makedirs(faiss_folder, exist_ok=True)
-    faiss.write_index(index, _index_path(faiss_folder, subject_id))
-    with open(_meta_path(faiss_folder, subject_id), "w", encoding="utf-8") as f:
-        json.dump(metadata, f)
-
-
-def add_material_to_index(faiss_folder, subject_id, material_id, material_name, chunks):
-    """Embeds and appends a material's chunks to its subject's index.
-    Incremental — existing vectors from other materials in the same
-    subject are untouched, so uploading material #4 doesn't require
-    re-embedding materials #1–3."""
-    index, metadata = load_or_create_index(faiss_folder, subject_id)
-
+    index = faiss.IndexFlatL2(INDEX_DIMENSION)
     vectors = embed_texts(chunks)
     index.add(np.array(vectors).astype("float32"))
 
-    for chunk in chunks:
-        metadata.append({"material_id": material_id, "material_name": material_name, "text": chunk})
+    metadata = [{"material_id": material_id, "material_name": material_name, "text": chunk} for chunk in chunks]
 
-    save_index(faiss_folder, subject_id, index, metadata)
+    faiss.write_index(index, _index_path(faiss_folder, material_id))
+    with open(_meta_path(faiss_folder, material_id), "w", encoding="utf-8") as f:
+        json.dump(metadata, f)
 
 
-def search_index(faiss_folder, subject_id, query, top_k=5):
-    """Returns the top_k most relevant chunks for a query, each
-    carrying its source material's name for citation."""
-    index, metadata = load_or_create_index(faiss_folder, subject_id)
+def search_index(faiss_folder, material_id, query, top_k=5):
+    """Returns the top_k most relevant chunks from a single material's
+    index for a given query."""
+    index_path = _index_path(faiss_folder, material_id)
+    meta_path = _meta_path(faiss_folder, material_id)
+
+    if not os.path.exists(index_path) or not os.path.exists(meta_path):
+        return []
+
+    index = faiss.read_index(index_path)
+    with open(meta_path, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
 
     if index.ntotal == 0:
         return []
@@ -68,3 +55,14 @@ def search_index(faiss_folder, subject_id, query, top_k=5):
     _, indices = index.search(query_vector, min(top_k, index.ntotal))
 
     return [metadata[idx] for idx in indices[0] if idx != -1]
+
+
+def delete_material_index(faiss_folder, material_id):
+    """Cleanly removes a material's index files. Called when a
+    material is deleted — this is the exact problem the old
+    per-subject scheme couldn't solve (FAISS can't delete individual
+    vectors from a shared index); per-material indexing makes
+    deletion trivial: just delete the two files."""
+    for path in (_index_path(faiss_folder, material_id), _meta_path(faiss_folder, material_id)):
+        if os.path.exists(path):
+            os.remove(path)
