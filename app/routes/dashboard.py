@@ -4,6 +4,7 @@ from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 
 from app.models import Subject, StudyMaterial, Assignment, StudySession
+from app.services.notification_service import generate_due_notifications
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -11,6 +12,8 @@ dashboard_bp = Blueprint("dashboard", __name__)
 @dashboard_bp.route("/")
 @login_required
 def dashboard():
+    generate_due_notifications(current_user.id)
+
     subject_count = Subject.query.filter_by(user_id=current_user.id).count()
     material_count = StudyMaterial.query.filter_by(user_id=current_user.id).count()
 

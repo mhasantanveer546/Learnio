@@ -7,9 +7,13 @@
         <h2 class="fw-semibold mb-1">{{ material.original_name }}</h2>
         <p class="text-muted mb-0">AI-generated study summary</p>
     </div>
+    <a href="{{ url_for('exports.export_summary', material_id=material.id) }}" class="btn btn-outline-primary btn-sm">
+        📄 Export PDF
+    </a>
     <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}" class="btn btn-outline-secondary btn-sm">
         ← Back to {{ material.subject.name }}
     </a>
+    
 </div>
 
 <div class="card border-0 shadow-sm p-4">

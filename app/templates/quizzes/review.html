@@ -8,9 +8,14 @@
         <h3 class="fw-semibold mb-1">
             {{ attempt.score }} / {{ attempt.total }}
         </h3>
-        <p class="text-muted mb-0">
+        <p class="text-muted mb-3">
             {{ ((attempt.score / attempt.total) * 100)|round(0) }}%
         </p>
+        <div class="d-flex justify-content-center">
+            <a href="{{ url_for('exports.export_quiz_review', attempt_id=attempt.id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-file-pdf me-1"></i> Export Review (PDF)
+            </a>
+        </div>
     {% else %}
         <h3 class="fw-semibold mb-1">Quiz Review</h3>
         <p class="text-muted mb-0">
@@ -133,7 +138,7 @@
 </div>
 {% endfor %}
 
-<a
+
 href="{{ url_for('quizzes.quiz_history', material_id=attempt.quiz.material_id) }}"
 class="btn btn-outline-secondary"
 

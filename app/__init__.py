@@ -20,6 +20,8 @@ from app.routes.calendar import calendar_bp
 from app.routes.search import search_bp
 from app.routes.timer import timer_bp
 from app.routes.analytics import analytics_bp
+from app.routes.notifications import notifications_bp
+from app.routes.exports import exports_bp
 
 
 def create_app(config_name="development"):
@@ -54,6 +56,8 @@ def create_app(config_name="development"):
     app.register_blueprint(search_bp)
     app.register_blueprint(timer_bp)
     app.register_blueprint(analytics_bp)
+    app.register_blueprint(notifications_bp)
+    app.register_blueprint(exports_bp)
 
     @app.errorhandler(404)
     def page_not_found(error):

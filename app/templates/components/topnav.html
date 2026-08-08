@@ -11,6 +11,7 @@
 
         <div class="d-flex align-items-center ms-auto">
             {% if current_user.is_authenticated %}
+                {% include "components/notifications_dropdown.html" %}
                 <a href="{{ url_for('profile.view_profile') }}" class="me-3 text-muted small text-decoration-none">
                     {{ current_user.username }}
                 </a>

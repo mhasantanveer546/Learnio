@@ -48,13 +48,11 @@
 
     {% if current_user.is_authenticated %}
     <script>
-        // Fixed Pomodoro constants — needed globally (not just on /timer)
-        // so the floating widget can correctly compute remaining time on
-        // any page the student navigates to mid-session.
         const POMODORO_FOCUS_SECONDS = {{ 25 * 60 }};
         const POMODORO_BREAK_SECONDS = {{ 5 * 60 }};
     </script>
     <script src="{{ url_for('static', filename='js/timer_widget.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
     {% endif %}
 
     {% block extra_js %}{% endblock %}

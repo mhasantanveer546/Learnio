@@ -122,6 +122,11 @@
                                 class="btn btn-sm btn-outline-success {% if not material.flashcard_set or material.flashcard_set.status != 'ready' %}d-none{% endif %}">
                                     🗂 Study Flashcards
                                 </a>
+                                {% if material.flashcard_set and material.flashcard_set.status == "ready" %}
+                                <a href="{{ url_for('exports.export_flashcards', material_id=material.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    📊 Export CSV
+                                </a>
+                                {% endif %}
                             </div>
 
                             <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-sm btn-outline-primary">

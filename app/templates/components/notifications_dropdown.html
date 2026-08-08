@@ -1,0 +1,17 @@
+<div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary position-relative me-3" type="button" id="notif-bell-btn" data-bs-toggle="dropdown" aria-expanded="false">
+        🔔
+        <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+            0
+        </span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow-sm p-0" style="width: 340px; max-height: 400px; overflow-y: auto;" aria-labelledby="notif-bell-btn">
+        <li class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+            <span class="fw-semibold small">Notifications</span>
+            <button id="notif-mark-all-read" class="btn btn-sm btn-link p-0 text-decoration-none">Mark all read</button>
+        </li>
+        <div id="notif-list">
+            <li class="px-3 py-4 text-center text-muted small">Loading...</li>
+        </div>
+    </ul>
+</div>
