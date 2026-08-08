@@ -2,6 +2,13 @@
     <div class="container-fluid">
         <span class="navbar-brand fw-semibold">Learnio</span>
 
+        {% if current_user.is_authenticated %}
+        <form action="{{ url_for('search.search_results') }}" method="GET" class="mx-auto position-relative" style="max-width: 400px; width: 100%;" id="global-search-form">
+            <input type="text" name="q" id="global-search-input" class="form-control form-control-sm" placeholder="Search everything..." autocomplete="off" value="{{ request.args.get('q', '') }}">
+            <div id="search-live-results" class="position-absolute bg-white shadow-sm rounded mt-1 w-100 d-none" style="z-index: 1000; max-height: 350px; overflow-y: auto;"></div>
+        </form>
+        {% endif %}
+
         <div class="d-flex align-items-center ms-auto">
             {% if current_user.is_authenticated %}
                 <a href="{{ url_for('profile.view_profile') }}" class="me-3 text-muted small text-decoration-none">
@@ -21,3 +28,7 @@
         </div>
     </div>
 </nav>
+
+{% if current_user.is_authenticated %}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+{% endif %}

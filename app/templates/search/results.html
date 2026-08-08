@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<h4 class="fw-semibold mb-4">
+    {% if query %}Results for "{{ query }}"{% else %}Search{% endif %}
+</h4>
+
+{% if not query %}
+<div class="alert alert-info">Type something in the search bar above to get started.</div>
+
+{% elif results.subjects|length + results.materials|length + results.summaries|length + results.flashcards|length + results.assignments|length + results.exams|length == 0 %}
+<div class="alert alert-info">No results found for "{{ query }}".</div>
+
+{% else %}
+
+{% macro result_group(title, items, endpoint) %}
+    {% if items %}
+    <div class="mb-4">
+        <h6 class="text-muted small text-uppercase mb-2">{{ title }}</h6>
+        <div class="list-group">
+            {% for item in items %}
+            <a href="{{ url_for(endpoint, **item.url_kwargs) }}" class="list-group-item list-group-item-action">
+                <div class="fw-semibold">{{ item.title }}</div>
+                {% if item.subtitle %}<div class="text-muted small">{{ item.subtitle }}</div>{% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+{% endmacro %}
+
+{{ result_group("Subjects", results.subjects, "subjects.view_subject") }}
+{{ result_group("Materials", results.materials, "subjects.view_subject") }}
+{{ result_group("Summaries", results.summaries, "summaries.view_summary") }}
+{{ result_group("Flashcards", results.flashcards, "flashcards.study_flashcards") }}
+{{ result_group("Assignments", results.assignments, "assignments.list_assignments") }}
+{{ result_group("Exams", results.exams, "exams.list_exams") }}
+
+{% endif %}
+{% endblock %}
