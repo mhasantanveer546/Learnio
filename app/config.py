@@ -16,7 +16,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-
+    TESSERACT_CMD = os.environ.get("TESSERACT_CMD")  # optional — only needed if tesseract isn't on system PATH
     MAIL_SERVER = os.environ.get("MAIL_SERVER")
     MAIL_PORT = os.environ.get("MAIL_PORT")
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")

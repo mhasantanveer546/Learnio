@@ -30,10 +30,6 @@ async function pollStatus(materialId, badge) {
 
         if (data.status === "ready" || data.status === "failed") {
             clearInterval(interval);
-
-            // The summary controls block was rendered hidden at page-load
-            // time (material wasn't ready yet) — reveal it now instead of
-            // requiring a manual refresh.
             if (data.status === "ready") {
                 revealSummaryControls(materialId);
             }
@@ -52,6 +48,23 @@ function updateBadge(badge, status) {
 
     badge.textContent = labels[status] || status;
     badge.className = `badge ${classes[status] || "bg-secondary"}`;
+}
+
+// ===== Shared: reveal + button state on any generation completing =====
+// Handles BOTH cases correctly: generation that goes through a visible
+// "processing" phase (via polling), AND generation that finishes so
+// fast the very first response already says "ready"/"failed" — the
+// bug we hit was this second, faster path never updating the UI.
+
+function handleGenerationComplete(status, btn, linkId) {
+    if (btn) {
+        btn.disabled = false;
+        if (status === "ready") btn.textContent = "Regenerate";
+    }
+    if (status === "ready") {
+        const link = document.getElementById(linkId);
+        if (link) link.classList.remove("d-none");
+    }
 }
 
 // ===== Summary generation (Phase 4) =====
@@ -78,10 +91,13 @@ async function generateSummary(materialId) {
         }
 
         updateSummaryBadge(badge, data.status);
+
         if (data.status === "processing") {
             pollSummaryStatus(materialId, badge, btn);
-        } else if (btn) {
-            btn.disabled = false;
+        } else {
+            // Finished immediately (ready or failed) — handle it now,
+            // same as pollSummaryStatus would have on completion.
+            handleGenerationComplete(data.status, btn, `summary-link-${materialId}`);
         }
     } catch (err) {
         console.error("Failed to start summary generation:", err);
@@ -98,22 +114,71 @@ async function pollSummaryStatus(materialId, badge, btn) {
 
         if (data.status === "ready" || data.status === "failed") {
             clearInterval(interval);
-            if (btn) {
-                btn.disabled = false;
-                if (data.status === "ready") {
-                    btn.textContent = "Regenerate";
-                }
-            }
-            if (data.status === "ready") {
-                const link = document.getElementById(`summary-link-${materialId}`);
-                if (link) link.classList.remove("d-none");
-            }
+            handleGenerationComplete(data.status, btn, `summary-link-${materialId}`);
         }
     }, 2000);
 }
 
 function updateSummaryBadge(badge, status) {
     const labels = { pending: "No summary yet", processing: "Generating…", ready: "Summary ready", failed: "Generation failed" };
+    const classes = { pending: "bg-secondary", processing: "bg-warning text-dark", ready: "bg-success", failed: "bg-danger" };
+
+    badge.textContent = labels[status] || status;
+    badge.className = `badge ${classes[status] || "bg-secondary"}`;
+}
+
+// ===== Flashcard generation (Phase 7) =====
+
+async function generateFlashcards(materialId) {
+    const badge = document.getElementById(`flashcard-status-${materialId}`);
+    const btn = document.querySelector(`.generate-flashcards-btn[data-material-id="${materialId}"]`);
+    if (!badge) return;
+
+    if (btn) btn.disabled = true;
+    updateFlashcardBadge(badge, "processing");
+
+    try {
+        const response = await fetch(`/flashcards/${materialId}/generate`, {
+            method: "POST",
+            headers: { "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content },
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            updateFlashcardBadge(badge, "failed");
+            if (btn) btn.disabled = false;
+            return;
+        }
+
+        updateFlashcardBadge(badge, data.status);
+
+        if (data.status === "processing") {
+            pollFlashcardStatus(materialId, badge, btn);
+        } else {
+            handleGenerationComplete(data.status, btn, `flashcard-link-${materialId}`);
+        }
+    } catch (err) {
+        console.error("Failed to start flashcard generation:", err);
+        updateFlashcardBadge(badge, "failed");
+        if (btn) btn.disabled = false;
+    }
+}
+
+function pollFlashcardStatus(materialId, badge, btn) {
+    const interval = setInterval(async () => {
+        const response = await fetch(`/flashcards/${materialId}/status`);
+        const data = await response.json();
+        updateFlashcardBadge(badge, data.status);
+
+        if (data.status === "ready" || data.status === "failed") {
+            clearInterval(interval);
+            handleGenerationComplete(data.status, btn, `flashcard-link-${materialId}`);
+        }
+    }, 2000);
+}
+
+function updateFlashcardBadge(badge, status) {
+    const labels = { pending: "No flashcards yet", processing: "Generating…", ready: "Flashcards ready", failed: "Generation failed" };
     const classes = { pending: "bg-secondary", processing: "bg-warning text-dark", ready: "bg-success", failed: "bg-danger" };
 
     badge.textContent = labels[status] || status;
@@ -139,9 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelectorAll(".generate-summary-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            generateSummary(btn.dataset.materialId);
-        });
+        btn.addEventListener("click", () => generateSummary(btn.dataset.materialId));
     });
 
     document.querySelectorAll("[data-summary-processing]").forEach((el) => {
@@ -151,59 +214,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btn) btn.disabled = true;
         pollSummaryStatus(materialId, badge, btn);
     });
+
+    document.querySelectorAll(".generate-flashcards-btn").forEach((btn) => {
+        btn.addEventListener("click", () => generateFlashcards(btn.dataset.materialId));
+    });
+
+    document.querySelectorAll("[data-flashcard-processing]").forEach((el) => {
+        const materialId = el.dataset.flashcardProcessing;
+        const badge = document.getElementById(`flashcard-status-${materialId}`);
+        const btn = document.querySelector(`.generate-flashcards-btn[data-material-id="${materialId}"]`);
+        if (btn) btn.disabled = true;
+        pollFlashcardStatus(materialId, badge, btn);
+    });
 });
-// ===== Flashcard generation (Phase 7) =====
-
-document.querySelectorAll(".generate-flashcards-btn").forEach(btn => {
-    btn.addEventListener("click", () => generateFlashcards(btn.dataset.materialId));
-});
-
-async function generateFlashcards(materialId) {
-    const badge = document.getElementById(`flashcard-status-${materialId}`);
-    if (!badge) return;
-
-    try {
-        const response = await fetch(`/flashcards/${materialId}/generate`, {
-            method: "POST",
-            headers: { "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content },
-        });
-        const data = await response.json();
-
-        if (data.error) {
-            badge.textContent = data.error;
-            badge.className = "badge bg-danger";
-            return;
-        }
-
-        updateFlashcardBadge(badge, data.status);
-        if (data.status === "processing") {
-            pollFlashcardStatus(materialId, badge);
-        }
-    } catch (err) {
-        console.error("Failed to start flashcard generation:", err);
-    }
-}
-
-function pollFlashcardStatus(materialId, badge) {
-    const interval = setInterval(async () => {
-        const response = await fetch(`/flashcards/${materialId}/status`);
-        const data = await response.json();
-        updateFlashcardBadge(badge, data.status);
-
-        if (data.status === "ready" || data.status === "failed") {
-            clearInterval(interval);
-            if (data.status === "ready") {
-                const link = document.getElementById(`flashcard-link-${materialId}`);
-                if (link) link.classList.remove("d-none");
-            }
-        }
-    }, 2000);
-}
-
-function updateFlashcardBadge(badge, status) {
-    const labels = { pending: "No flashcards yet", processing: "Generating…", ready: "Flashcards ready", failed: "Generation failed" };
-    const classes = { pending: "bg-secondary", processing: "bg-warning text-dark", ready: "bg-success", failed: "bg-danger" };
-
-    badge.textContent = labels[status] || status;
-    badge.className = `badge ${classes[status] || "bg-secondary"}`;
-}
