@@ -7,9 +7,10 @@ from app.models.chat import ChatSession, ChatMessage
 from app.models.quiz import Quiz, QuizQuestion, QuizAttempt, QuizAnswer
 from app.models.flashcard import FlashcardSet, Flashcard
 from app.models.assignment import Assignment, Exam
+from app.models.study_session import StudySession
 
 __all__ = [
     "User", "Subject", "StudyMaterial", "Summary", "ChatSession", "ChatMessage",
     "Quiz", "QuizQuestion", "QuizAttempt", "QuizAnswer",
-    "FlashcardSet", "Flashcard","Assignment", "Exam"
+    "FlashcardSet", "Flashcard","Assignment", "Exam","StudySession"
 ]

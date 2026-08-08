@@ -1,19 +1,69 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-semibold mb-1">Welcome to Learnio</h2>
-        <p class="text-muted mb-0">Learn Smarter. Study Faster.</p>
+<div class="mb-4">
+    <h2 class="fw-semibold mb-1">Welcome back, {{ current_user.username }}</h2>
+    <p class="text-muted mb-0">Learn Smarter. Study Faster.</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center">
+            <div class="fs-4 fw-bold text-primary">{{ subject_count }}</div>
+            <div class="text-muted small">Subjects</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center">
+            <div class="fs-4 fw-bold text-primary">{{ material_count }}</div>
+            <div class="text-muted small">Materials</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center">
+            <div class="fs-4 fw-bold text-primary">{{ study_hours_this_week }}h</div>
+            <div class="text-muted small">Studied This Week</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center">
+            <div class="fs-4 fw-bold text-primary">{{ upcoming_assignments|length }}</div>
+            <div class="text-muted small">Due Soon</div>
+        </div>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm p-4">
-    <h5 class="mb-2">Your AI Study Assistant</h5>
-    <p class="text-muted mb-0">
-        Subjects, materials, and study stats will appear here once you start adding content.
-    </p>
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-semibold mb-3">Upcoming Assignments</h6>
+            {% if upcoming_assignments %}
+                {% for a in upcoming_assignments %}
+                <div class="d-flex justify-content-between border-bottom py-2 small">
+                    <span>{{ a.title }}</span>
+                    <span class="text-muted">{{ a.due_date.strftime("%b %d") }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted small mb-0">Nothing due soon.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-semibold mb-3">Recently Uploaded</h6>
+            {% if recent_materials %}
+                {% for m in recent_materials %}
+                <div class="d-flex justify-content-between border-bottom py-2 small">
+                    <span>{{ m.original_name }}</span>
+                    <span class="text-muted">{{ m.subject.name }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted small mb-0">No materials uploaded yet.</p>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

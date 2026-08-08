@@ -11,7 +11,7 @@
     <link href="{{ url_for('static', filename='css/base.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -45,6 +45,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        // Fixed Pomodoro constants — needed globally (not just on /timer)
+        // so the floating widget can correctly compute remaining time on
+        // any page the student navigates to mid-session.
+        const POMODORO_FOCUS_SECONDS = {{ 25 * 60 }};
+        const POMODORO_BREAK_SECONDS = {{ 5 * 60 }};
+    </script>
+    <script src="{{ url_for('static', filename='js/timer_widget.js') }}"></script>
+    {% endif %}
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

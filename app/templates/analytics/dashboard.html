@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<h4 class="fw-semibold mb-4">Analytics</h4>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-semibold mb-3">Study Hours (last 14 days)</h6>
+            <canvas id="chart-study-hours"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-semibold mb-3">Quiz Scores (recent attempts)</h6>
+            <canvas id="chart-quiz-scores"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-semibold mb-3">Uploads (last 14 days)</h6>
+            <canvas id="chart-uploads"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-semibold mb-3">Study Time by Subject</h6>
+            <canvas id="chart-subjects"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>renderAnalyticsCharts();</script>
+{% endblock %}

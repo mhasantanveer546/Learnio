@@ -14,7 +14,7 @@
                 <a href="{{ url_for('profile.view_profile') }}" class="me-3 text-muted small text-decoration-none">
                     {{ current_user.username }}
                 </a>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary">
+                <a id="logout-link" href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary">
                     Log Out
                 </a>
             {% else %}
