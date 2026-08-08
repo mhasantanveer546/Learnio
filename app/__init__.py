@@ -1,6 +1,8 @@
 import os
 import json
+from datetime import datetime, timezone
 from flask import Flask, render_template, flash, redirect, url_for, request
+from flask_login import current_user
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from app.config import config
@@ -22,7 +24,8 @@ from app.routes.timer import timer_bp
 from app.routes.analytics import analytics_bp
 from app.routes.notifications import notifications_bp
 from app.routes.exports import exports_bp
-
+from app.routes.admin import admin_bp
+from app.cli import create_admin
 
 def create_app(config_name="development"):
     app = Flask(__name__)
@@ -58,6 +61,9 @@ def create_app(config_name="development"):
     app.register_blueprint(analytics_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(exports_bp)
+    app.register_blueprint(admin_bp)
+
+    app.cli.add_command(create_admin)
 
     @app.errorhandler(404)
     def page_not_found(error):
@@ -75,5 +81,11 @@ def create_app(config_name="development"):
     @app.template_filter("from_json")
     def from_json_filter(value):
         return json.loads(value) if value else []
+
+    @app.before_request
+    def update_last_seen():
+        if current_user.is_authenticated:
+            current_user.last_seen_at = datetime.now(timezone.utc)
+            db.session.commit()
 
     return app

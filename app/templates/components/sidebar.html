@@ -12,17 +12,34 @@
         <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('materials.') }}" href="{{ url_for('materials.list_materials') }}">
             Materials
         </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('quizzes.') }}" href="{{ url_for('materials.list_materials') }}">
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('quizzes.') }}" href="{{ url_for('quizzes.configure_quiz', material_id=0) if false else '#' }}">
             Quizzes
         </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('flashcards.') }}" href="{{ url_for('materials.list_materials') }}">
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('flashcards.') }}" href="#">
             Flashcards
         </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'calendar.view_calendar' }}" href="{{ url_for('calendar.view_calendar') }}">Calendar</a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('assignments.') }}" href="{{ url_for('assignments.list_assignments') }}">Assignments</a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('exams.') }}" href="{{ url_for('exams.list_exams') }}">Exams</a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'timer.view_timer' }}" href="{{ url_for('timer.view_timer') }}">Study Timer</a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'analytics.view_analytics' }}" href="{{ url_for('analytics.view_analytics') }}">Analytics</a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'calendar.view_calendar' }}" href="{{ url_for('calendar.view_calendar') }}">
+            Calendar
+        </a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('assignments.') }}" href="{{ url_for('assignments.list_assignments') }}">
+            Assignments
+        </a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('exams.') }}" href="{{ url_for('exams.list_exams') }}">
+            Exams
+        </a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'timer.view_timer' }}" href="{{ url_for('timer.view_timer') }}">
+            Study Timer
+        </a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'analytics.view_analytics' }}" href="{{ url_for('analytics.view_analytics') }}">
+            Analytics
+        </a>
+
+        {% if current_user.is_admin %}
+        <hr class="text-white-50 my-2">
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('admin.') }}" href="{{ url_for('admin.dashboard') }}">
+            ⚙️ Admin
+        </a>
+        {% endif %}
     </nav>
     {% endif %}
 </div>

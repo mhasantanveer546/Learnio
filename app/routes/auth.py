@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
+from datetime import datetime, timezone
 
 from app.extensions import db
 from app.forms.auth import LoginForm, RegisterForm
@@ -45,13 +46,14 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
 
         if user and user.check_password(form.password.data):
-            login_user(user, remember=form.remember_me.data)
+            if not user.is_active:
+                flash("Your Learnio account has been suspended. Please contact an administrator.", "danger")
+                return render_template("auth/login.html", form=form)
 
-            # Safe handling of Flask-Login's `next` param — only follow
-            # it if it's a relative path on our own site. Never redirect
-            # to an absolute/external URL; that's how open-redirect
-            # phishing attacks work (login page looks legit, but you get
-            # bounced off-site after authenticating).
+            login_user(user, remember=form.remember_me.data)
+            user.last_seen_at = datetime.now(timezone.utc)
+            db.session.commit()
+
             next_page = request.args.get("next")
             if not next_page or not next_page.startswith("/"):
                 next_page = url_for("dashboard.dashboard")
@@ -59,14 +61,9 @@ def login():
             flash("Logged in successfully!", "success")
             return redirect(next_page)
 
-        # Deliberately vague — don't reveal whether it was the email
-        # or the password that was wrong. Telling an attacker "that
-        # email doesn't exist" vs "wrong password" leaks which emails
-        # are registered accounts.
         flash("Invalid email or password.", "danger")
 
     return render_template("auth/login.html", form=form)
-
 
 @auth_bp.route("/logout")
 @login_required

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<h4 class="fw-semibold mb-4">Manage Users</h4>
+
+<div class="table-responsive">
+    <table class="table align-middle bg-white shadow-sm rounded">
+        <thead>
+            <tr>
+                <th>Username</th><th>Email</th><th>Joined</th><th>Last Seen</th><th>Status</th><th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}{% if user.is_admin %} <span class="badge bg-primary">Admin</span>{% endif %}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.created_at.strftime("%b %d, %Y") }}</td>
+                <td>{{ user.last_seen_at.strftime("%b %d, %Y %H:%M") if user.last_seen_at else "Never" }}</td>
+                <td>
+                    {% if user.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-danger">Suspended</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not user.is_admin %}
+                        <form method="POST" action="{{ url_for('admin.reactivate_user' if not user.is_active else 'admin.suspend_user', user_id=user.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm {{ 'btn-outline-success' if not user.is_active else 'btn-outline-danger' }}">
+                                {{ "Reactivate" if not user.is_active else "Suspend" }}
+                            </button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
