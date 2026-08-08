@@ -14,7 +14,9 @@ from app.routes.summaries import summaries_bp
 from app.routes.chat import chat_bp
 from app.routes.quizzes import quizzes_bp
 from app.routes.flashcards import flashcards_bp
-
+from app.routes.assignments import assignments_bp
+from app.routes.exams import exams_bp
+from app.routes.calendar import calendar_bp
 
 def create_app(config_name="development"):
     app = Flask(__name__)
@@ -42,6 +44,9 @@ def create_app(config_name="development"):
     app.register_blueprint(chat_bp)
     app.register_blueprint(quizzes_bp)
     app.register_blueprint(flashcards_bp)
+    app.register_blueprint(assignments_bp)
+    app.register_blueprint(exams_bp)
+    app.register_blueprint(calendar_bp)
 
     @app.errorhandler(404)
     def page_not_found(error):

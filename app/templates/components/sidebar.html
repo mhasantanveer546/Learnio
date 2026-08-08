@@ -18,6 +18,9 @@
         <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('flashcards.') }}" href="{{ url_for('materials.list_materials') }}">
             Flashcards
         </a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'calendar.view_calendar' }}" href="{{ url_for('calendar.view_calendar') }}">Calendar</a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('assignments.') }}" href="{{ url_for('assignments.list_assignments') }}">Assignments</a>
+        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('exams.') }}" href="{{ url_for('exams.list_exams') }}">Exams</a>
     </nav>
     {% endif %}
 </div>

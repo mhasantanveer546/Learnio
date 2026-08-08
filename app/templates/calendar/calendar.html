@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<style>
+    .fc-event { border: none; border-radius: 6px; padding: 2px 4px; font-size: 0.8em; }
+    .fc-toolbar-title { font-weight: 600; color: #1E293B; }
+    .fc-daygrid-day.fc-day-today { background-color: rgba(37, 99, 235, 0.06); }
+    .upcoming-item { border-left: 4px solid; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-semibold mb-0">Calendar</h2>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('assignments.create_assignment') }}" class="btn btn-outline-primary btn-sm">+ Assignment</a>
+        <a href="{{ url_for('exams.create_exam') }}" class="btn btn-outline-primary btn-sm">+ Exam</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm p-3">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <h6 class="fw-semibold mb-3">Upcoming (next 14 days)</h6>
+
+        {% if not upcoming_assignments and not upcoming_exams %}
+            <p class="text-muted small">Nothing due soon.</p>
+        {% endif %}
+
+        {% for a in upcoming_assignments %}
+        <div class="upcoming-item card border-0 shadow-sm p-3 mb-2" style="border-left-color: {% if a.priority == 'high' %}#EF4444{% elif a.priority == 'medium' %}#F59E0B{% else %}#10B981{% endif %};">
+            <div class="fw-semibold small">📝 {{ a.title }}</div>
+            <div class="text-muted small">{{ a.subject.name }} &middot; {{ a.due_date.strftime("%b %d, %I:%M %p") }}</div>
+        </div>
+        {% endfor %}
+
+        {% for e in upcoming_exams %}
+        <div class="upcoming-item card border-0 shadow-sm p-3 mb-2" style="border-left-color: #7C3AED;">
+            <div class="fw-semibold small">🎓 {{ e.title }}</div>
+            <div class="text-muted small">{{ e.subject.name }} &middot; {{ e.exam_date.strftime("%b %d, %I:%M %p") }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventModalBody"></div>
+            <div class="modal-footer">
+                <a id="eventModalEditLink" href="#" class="btn btn-primary btn-sm">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}

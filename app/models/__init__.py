@@ -6,10 +6,10 @@ from app.models.summary import Summary
 from app.models.chat import ChatSession, ChatMessage
 from app.models.quiz import Quiz, QuizQuestion, QuizAttempt, QuizAnswer
 from app.models.flashcard import FlashcardSet, Flashcard
-
+from app.models.assignment import Assignment, Exam
 
 __all__ = [
     "User", "Subject", "StudyMaterial", "Summary", "ChatSession", "ChatMessage",
     "Quiz", "QuizQuestion", "QuizAttempt", "QuizAnswer",
-    "FlashcardSet", "Flashcard",
+    "FlashcardSet", "Flashcard","Assignment", "Exam"
 ]

@@ -32,3 +32,7 @@ def get_material_filepath(upload_folder, user_id, filename):
 def get_profile_picture_filepath(upload_folder, user_id, filename):
     """Same idea, for profile pictures."""
     return os.path.join(upload_folder, "users", f"user_{user_id}", "profile", filename)
+
+
+def get_assignment_attachment_filepath(upload_folder, user_id, filename):
+    return os.path.join(upload_folder, "users", f"user_{user_id}", "assignments", filename)

@@ -47,3 +47,22 @@ def save_study_material(file, user_id, upload_folder):
     file_size = os.path.getsize(filepath)
 
     return {"filename": filename, "file_type": file_type, "file_size": file_size}
+
+def save_assignment_attachment(file, user_id, upload_folder):
+    """Same validated-upload pattern as save_study_material, scoped to
+    assignments' own folder. Returns filename + size; caller sets the
+    display name via secure_filename(file.filename)."""
+    if not is_allowed_file(file.filename):
+        raise ValueError("That file type isn't supported.")
+
+    ext = get_file_extension(file.filename)
+    filename = f"{uuid.uuid4().hex}.{ext}"
+
+    user_dir = os.path.join(upload_folder, "users", f"user_{user_id}", "assignments")
+    os.makedirs(user_dir, exist_ok=True)
+
+    filepath = os.path.join(user_dir, filename)
+    file.save(filepath)
+    file_size = os.path.getsize(filepath)
+
+    return {"filename": filename, "file_size": file_size}
