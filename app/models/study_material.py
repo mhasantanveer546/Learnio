@@ -10,7 +10,7 @@ class StudyMaterial(db.Model):
     subject_id = db.Column(db.Integer, db.ForeignKey("subjects.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
 
-    filename = db.Column(db.String(255), nullable=False)        # UUID-based, safe on disk
+    filename = db.Column(db.String(255), nullable=True)        # UUID-based, safe on disk
     original_name = db.Column(db.String(255), nullable=False)   # display only, never used as a path
     file_type = db.Column(db.String(10), nullable=False)        # pdf, docx, pptx, txt, jpg, png
     file_size = db.Column(db.Integer, nullable=False)           # bytes
@@ -25,7 +25,7 @@ class StudyMaterial(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
-
+    storage_key = db.Column(db.String(500), nullable=True)
     subject = db.relationship(
         "Subject",
         backref=db.backref("materials", lazy=True, cascade="all, delete-orphan"),

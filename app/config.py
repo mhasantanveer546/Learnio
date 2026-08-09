@@ -33,6 +33,10 @@ class Config:
     # generated artifacts, not source.
     FAISS_INDEX_FOLDER = os.path.join(BASE_DIR, "app", "static", "faiss_index")
 
+    R2_ENDPOINT_URL = os.environ.get("R2_ENDPOINT_URL")
+    R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
+    R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
+    R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME")
 
 class DevelopmentConfig(Config):
     DEBUG = True

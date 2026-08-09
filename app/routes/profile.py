@@ -1,12 +1,10 @@
-import os
-
-from flask import Blueprint, render_template, redirect, url_for, flash, current_app,send_file,abort
+from flask import Blueprint, render_template, redirect, url_for, flash, current_app, abort
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.forms.auth import ProfileForm, ChangePasswordForm
 from app.services.upload_service import save_profile_picture
-from app.utils.file_utils import get_profile_picture_filepath
+from app.services.storage_service import generate_download_url
 from app.models import User
 
 profile_bp = Blueprint("profile", __name__, url_prefix="/profile")
@@ -22,12 +20,8 @@ def view_profile():
         current_user.email = form.email.data
 
         if form.profile_picture.data:
-            filename = save_profile_picture(
-                form.profile_picture.data,
-                current_user.id,
-                current_app.config["UPLOAD_FOLDER"],
-            )
-            current_user.profile_picture = filename
+            storage_key = save_profile_picture(form.profile_picture.data, current_user.id)
+            current_user.profile_picture_key = storage_key
 
         db.session.commit()
         flash("Profile updated successfully.", "success")
@@ -56,22 +50,10 @@ def change_password():
 @profile_bp.route("/picture/<int:user_id>", methods=["GET"])
 @login_required
 def serve_profile_picture(user_id):
-    """Serves a user's profile picture. Any logged-in user can view
-    any other user's profile picture (like a public avatar) — this is
-    a deliberate choice, unlike study materials which are strictly
-    private. If Learnio later adds public profiles/social features,
-    this is already the right shape; if not, no harm since profile
-    pictures aren't sensitive data."""
     user = User.query.get_or_404(user_id)
 
-    if not user.profile_picture:
+    if not user.profile_picture_key:
         abort(404)
 
-    filepath = get_profile_picture_filepath(
-        current_app.config["UPLOAD_FOLDER"], user.id, user.profile_picture
-    )
-
-    if not os.path.exists(filepath):
-        abort(404)
-
-    return send_file(filepath)
+    url = generate_download_url(user.profile_picture_key, "profile_picture.jpg", expires_in=3600)
+    return redirect(url)

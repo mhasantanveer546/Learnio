@@ -30,6 +30,7 @@ class Assignment(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+    attachment_key = db.Column(db.String(500), nullable=True)
 
     subject = db.relationship("Subject", backref=db.backref("assignments", lazy=True, cascade="all, delete-orphan"))
     owner = db.relationship("User", backref=db.backref("assignments", lazy=True, cascade="all, delete-orphan"))

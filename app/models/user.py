@@ -26,6 +26,7 @@ class User(UserMixin, db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+    profile_picture_key = db.Column(db.String(500), nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

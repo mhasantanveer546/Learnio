@@ -1,6 +1,4 @@
-import os
-
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, send_file, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
@@ -8,7 +6,7 @@ from app.extensions import db
 from app.models import Subject, Assignment
 from app.forms.assignments import AssignmentForm
 from app.services.upload_service import save_assignment_attachment
-from app.utils.file_utils import get_assignment_attachment_filepath
+from app.services.storage_service import delete_file, generate_download_url
 
 assignments_bp = Blueprint("assignments", __name__, url_prefix="/assignments")
 
@@ -54,8 +52,8 @@ def create_assignment():
 
         if form.attachment.data:
             try:
-                saved = save_assignment_attachment(form.attachment.data, current_user.id, current_app.config["UPLOAD_FOLDER"])
-                assignment.attachment_filename = saved["filename"]
+                saved = save_assignment_attachment(form.attachment.data, current_user.id)
+                assignment.attachment_key = saved["storage_key"]
                 assignment.attachment_original_name = secure_filename(form.attachment.data.filename)
                 assignment.attachment_size = saved["file_size"]
             except ValueError as e:
@@ -79,7 +77,7 @@ def edit_assignment(assignment_id):
     form.subject_id.choices = [(s.id, s.name) for s in Subject.query.filter_by(user_id=current_user.id).all()]
 
     if request.method == "GET":
-        form.subject_id.data = assignment.subject_id  # obj= doesn't reliably set SelectField
+        form.subject_id.data = assignment.subject_id
 
     if form.validate_on_submit():
         assignment.subject_id = form.subject_id.data
@@ -90,17 +88,12 @@ def edit_assignment(assignment_id):
         assignment.status = form.status.data
 
         if form.attachment.data:
-            # Replacing an attachment — remove the old file from disk first
-            if assignment.attachment_filename:
-                old_path = get_assignment_attachment_filepath(
-                    current_app.config["UPLOAD_FOLDER"], assignment.user_id, assignment.attachment_filename
-                )
-                if os.path.exists(old_path):
-                    os.remove(old_path)
+            if assignment.attachment_key:
+                delete_file(assignment.attachment_key)
 
             try:
-                saved = save_assignment_attachment(form.attachment.data, current_user.id, current_app.config["UPLOAD_FOLDER"])
-                assignment.attachment_filename = saved["filename"]
+                saved = save_assignment_attachment(form.attachment.data, current_user.id)
+                assignment.attachment_key = saved["storage_key"]
                 assignment.attachment_original_name = secure_filename(form.attachment.data.filename)
                 assignment.attachment_size = saved["file_size"]
             except ValueError as e:
@@ -119,12 +112,8 @@ def edit_assignment(assignment_id):
 def delete_assignment(assignment_id):
     assignment = Assignment.query.filter_by(id=assignment_id, user_id=current_user.id).first_or_404()
 
-    if assignment.attachment_filename:
-        filepath = get_assignment_attachment_filepath(
-            current_app.config["UPLOAD_FOLDER"], assignment.user_id, assignment.attachment_filename
-        )
-        if os.path.exists(filepath):
-            os.remove(filepath)
+    if assignment.attachment_key:
+        delete_file(assignment.attachment_key)
 
     db.session.delete(assignment)
     db.session.commit()
@@ -146,13 +135,8 @@ def toggle_status(assignment_id):
 def download_attachment(assignment_id):
     assignment = Assignment.query.filter_by(id=assignment_id, user_id=current_user.id).first_or_404()
 
-    if not assignment.attachment_filename:
+    if not assignment.attachment_key:
         abort(404)
 
-    filepath = get_assignment_attachment_filepath(
-        current_app.config["UPLOAD_FOLDER"], assignment.user_id, assignment.attachment_filename
-    )
-    if not os.path.exists(filepath):
-        abort(404)
-
-    return send_file(filepath, as_attachment=True, download_name=assignment.attachment_original_name)
+    url = generate_download_url(assignment.attachment_key, assignment.attachment_original_name)
+    return redirect(url)

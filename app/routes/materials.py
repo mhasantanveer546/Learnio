@@ -1,6 +1,4 @@
-import os
-
-from flask import Blueprint, current_app, flash, redirect, request, url_for, jsonify, render_template, send_file, abort
+from flask import Blueprint, current_app, flash, redirect, request, url_for, jsonify, render_template, abort
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
@@ -9,8 +7,10 @@ from app.forms.materials import UploadMaterialForm
 from app.models import Subject, StudyMaterial
 from app.services.upload_service import save_study_material
 from app.services.text_extraction_service import extract_text
-from app.services.chat_service import index_material,remove_material_index
-from app.utils.file_utils import get_material_filepath
+from app.services.chat_service import index_material, remove_material_index
+from app.services.storage_service import delete_file, download_to_temp, generate_download_url
+
+import os
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/materials")
 
@@ -62,15 +62,13 @@ def upload_material():
     ).first_or_404()
 
     try:
-        saved_file = save_study_material(
-            form.file.data, current_user.id, current_app.config["UPLOAD_FOLDER"]
-        )
+        saved_file = save_study_material(form.file.data, current_user.id)
     except ValueError as e:
         flash(str(e), "danger")
         return redirect(url_for("subjects.view_subject", subject_id=subject.id))
 
     material = StudyMaterial(
-        filename=saved_file["filename"],
+        storage_key=saved_file["storage_key"],
         original_name=secure_filename(form.file.data.filename),
         file_type=saved_file["file_type"],
         file_size=saved_file["file_size"],
@@ -87,22 +85,13 @@ def upload_material():
 @materials_bp.route("/<int:material_id>/download", methods=["GET"])
 @login_required
 def download_material(material_id):
-    material = StudyMaterial.query.filter_by(
-        id=material_id, user_id=current_user.id
-    ).first_or_404()
+    material = StudyMaterial.query.filter_by(id=material_id, user_id=current_user.id).first_or_404()
 
-    filepath = get_material_filepath(
-        current_app.config["UPLOAD_FOLDER"], material.user_id, material.filename
-    )
-
-    if not os.path.exists(filepath):
+    if not material.storage_key:
         abort(404)
 
-    return send_file(
-        filepath,
-        as_attachment=True,
-        download_name=material.original_name,
-    )
+    url = generate_download_url(material.storage_key, material.original_name)
+    return redirect(url)
 
 
 @materials_bp.route("/<int:material_id>/process", methods=["POST"])
@@ -115,20 +104,17 @@ def process_material(material_id):
     material.status = "processing"
     db.session.commit()
 
-    filepath = get_material_filepath(
-        current_app.config["UPLOAD_FOLDER"], material.user_id, material.filename
-    )
+    # Download to a local temp file for processing only — this is
+    # scratch space, not permanent storage. Always cleaned up in the
+    # finally block, whether extraction succeeds or fails.
+    temp_path = download_to_temp(material.storage_key, suffix=f".{material.file_type}")
 
     try:
-        text = extract_text(filepath, material.file_type)
+        text = extract_text(temp_path, material.file_type)
         material.extracted_text = text
         material.status = "ready"
         db.session.commit()
 
-        # Phase 5 — index for RAG chat now that extracted text exists.
-        # Kept in its own try/except so an indexing failure never undoes
-        # a successful extraction; the material is still fully usable
-        # (viewable, downloadable, summarizable) even if this step fails.
         try:
             index_material(material)
         except Exception as e:
@@ -138,6 +124,10 @@ def process_material(material_id):
         material.status = "failed"
         current_app.logger.warning(f"Extraction failed for material {material.id}: {e}")
         db.session.commit()
+
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     return jsonify({"status": material.status})
 
@@ -159,17 +149,16 @@ def delete_material(material_id):
         id=material_id, user_id=current_user.id
     ).first_or_404()
 
-    filepath = get_material_filepath(
-        current_app.config["UPLOAD_FOLDER"], material.user_id, material.filename
-    )
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    if material.storage_key:
+        delete_file(material.storage_key)
 
     subject_id = material.subject_id
+
     try:
         remove_material_index(material)
     except Exception as e:
         current_app.logger.warning(f"Failed to remove FAISS index for material {material.id}: {e}")
+
     db.session.delete(material)
     db.session.commit()
 

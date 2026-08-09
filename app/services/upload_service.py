@@ -1,68 +1,48 @@
-import os
-import uuid
-
-from app.utils.file_utils import ALLOWED_EXTENSIONS, get_file_extension, is_allowed_file
-
-
-def save_profile_picture(file, user_id, upload_folder):
-    """Saves an uploaded profile picture to uploads/users/user_<id>/profile/
-    and returns the filename to store in User.profile_picture.
-
-    Uses a random UUID filename (not the original name) to avoid:
-    - filename collisions between users
-    - path traversal via a maliciously crafted filename
-    - leaking the original filename/extension info unnecessarily
-    """
-    ext = get_file_extension(file.filename) or ""
-    filename = f"{uuid.uuid4().hex}.{ext}" if ext else uuid.uuid4().hex
-
-    user_dir = os.path.join(upload_folder, "users", f"user_{user_id}", "profile")
-    os.makedirs(user_dir, exist_ok=True)
-
-    file.save(os.path.join(user_dir, filename))
-    return filename
+from app.services.storage_service import upload_file_obj
+from app.utils.storage_utils import build_material_key, build_profile_picture_key, build_assignment_attachment_key, generate_object_filename
+from app.utils.file_utils import is_allowed_file, get_file_extension, ALLOWED_EXTENSIONS
 
 
-def save_study_material(file, user_id, upload_folder):
-    """Validates and saves an uploaded study material.
+def _get_file_size(file):
+    """Reads size via seek/tell BEFORE any upload happens — boto3's
+    upload_fileobj can close the underlying stream once the transfer
+    completes, so touching the file object afterward is unreliable."""
+    file.seek(0, 2)  # seek to end
+    size = file.tell()
+    file.seek(0)  # reset to start so upload actually reads from the beginning
+    return size
 
-    Returns a dict: {"filename", "file_type", "file_size"}.
-    Raises ValueError if the file type isn't allowed — the route is
-    responsible for catching this and flashing a user-facing message.
-    """
+
+def save_study_material(file, user_id):
     if not is_allowed_file(file.filename):
-        raise ValueError(
-            "That file type isn't supported. Allowed types: PDF, DOCX, PPTX, TXT, JPG, PNG."
-        )
+        raise ValueError("That file type isn't supported. Allowed types: PDF, DOCX, PPTX, TXT, JPG, PNG.")
 
     ext = get_file_extension(file.filename)
     file_type = ALLOWED_EXTENSIONS[ext]
-    filename = f"{uuid.uuid4().hex}.{ext}"
+    filename = generate_object_filename(file.filename)
+    storage_key = build_material_key(user_id, filename)
 
-    user_dir = os.path.join(upload_folder, "users", f"user_{user_id}", "notes")
-    os.makedirs(user_dir, exist_ok=True)
+    file_size = _get_file_size(file)
+    upload_file_obj(file, storage_key)
 
-    filepath = os.path.join(user_dir, filename)
-    file.save(filepath)
-    file_size = os.path.getsize(filepath)
+    return {"storage_key": storage_key, "file_type": file_type, "file_size": file_size}
 
-    return {"filename": filename, "file_type": file_type, "file_size": file_size}
 
-def save_assignment_attachment(file, user_id, upload_folder):
-    """Same validated-upload pattern as save_study_material, scoped to
-    assignments' own folder. Returns filename + size; caller sets the
-    display name via secure_filename(file.filename)."""
+def save_profile_picture(file, user_id):
+    filename = generate_object_filename(file.filename)
+    storage_key = build_profile_picture_key(user_id, filename)
+    upload_file_obj(file, storage_key)
+    return storage_key
+
+
+def save_assignment_attachment(file, user_id):
     if not is_allowed_file(file.filename):
         raise ValueError("That file type isn't supported.")
 
-    ext = get_file_extension(file.filename)
-    filename = f"{uuid.uuid4().hex}.{ext}"
+    filename = generate_object_filename(file.filename)
+    storage_key = build_assignment_attachment_key(user_id, filename)
 
-    user_dir = os.path.join(upload_folder, "users", f"user_{user_id}", "assignments")
-    os.makedirs(user_dir, exist_ok=True)
+    file_size = _get_file_size(file)
+    upload_file_obj(file, storage_key)
 
-    filepath = os.path.join(user_dir, filename)
-    file.save(filepath)
-    file_size = os.path.getsize(filepath)
-
-    return {"filename": filename, "file_size": file_size}
+    return {"storage_key": storage_key, "file_size": file_size}
