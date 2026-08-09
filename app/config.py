@@ -27,12 +27,7 @@ class Config:
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB per request
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
-    # Phase 5 — per-subject FAISS indexes + their metadata JSON files
-    # live here. Matches the original project spec's file structure
-    # (app/static/faiss_index/), kept gitignored since these are
-    # generated artifacts, not source.
-    FAISS_INDEX_FOLDER = os.path.join(BASE_DIR, "app", "static", "faiss_index")
-
+    
     R2_ENDPOINT_URL = os.environ.get("R2_ENDPOINT_URL")
     R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
     R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
