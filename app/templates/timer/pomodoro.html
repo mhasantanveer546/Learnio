@@ -1,30 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Study Timer{% endblock %}
-
+{% block title %}Study Timer - Learnio{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-center">
-    <div class="card border-0 shadow-sm p-5 text-center" style="max-width: 420px; width: 100%;">
-        <h4 class="fw-semibold mb-1" id="timer-mode-label">Focus Session</h4>
-        <p class="text-muted small mb-4">25 minutes focus, 5 minutes break</p>
-
-        <div class="display-1 fw-bold mb-4" id="timer-display" style="color: #2563EB;">25:00</div>
-
-        <div class="mb-4">
-            <label class="form-label small">Subject (optional)</label>
-            <select id="timer-subject" class="form-select">
-                <option value="">General Study</option>
-                {% for subject in subjects %}
-                <option value="{{ subject.id }}">{{ subject.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="d-flex gap-2 justify-content-center">
-            <button id="timer-start" class="btn btn-primary px-4">Start</button>
-            <button id="timer-stop" class="btn btn-outline-danger px-4 d-none">Stop</button>
-        </div>
-
-        <p class="text-muted small mt-4 mb-0" id="timer-status"></p>
+<div style="margin-bottom: 32px;">
+    <h1 style="font-size: 1.8rem; font-weight: 700;">Focus Timer</h1>
+    <p style="color: var(--text-muted); margin-top: 4px;">25 minutes focus, 5 minutes break.</p>
+</div>
+<div class="card" style="max-width: 500px; margin: 0 auto; text-align: center;">
+    <h4 id="timer-mode-label" style="margin-bottom: 8px;">Focus Session</h4>
+    <div id="timer-display" style="font-size: 5rem; font-weight: 700; color: var(--primary); margin-bottom: 24px; font-variant-numeric: tabular-nums;">25:00</div>
+    <div class="form-group" style="max-width:260px; margin:0 auto 24px;">
+        <label class="form-label">Subject (optional)</label>
+        <select id="timer-subject" class="form-control">
+            <option value="">General Study</option>
+            {% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.name }}</option>{% endfor %}
+        </select>
     </div>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+        <button id="timer-start" class="btn btn-primary" style="width: 140px;"><i class="fas fa-play"></i> Start</button>
+        <button id="timer-stop" class="btn btn-outline" style="width: 140px; display: none;"><i class="fas fa-stop"></i> Stop</button>
+    </div>
+    <p id="timer-status" style="margin-top:16px; font-size:0.85rem; color:var(--text-muted);"></p>
 </div>
 {% endblock %}

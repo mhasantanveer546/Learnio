@@ -1,37 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Exams{% endblock %}
-
+{% block title %}Exams - Learnio{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-semibold mb-0">Exams</h2>
-    <a href="{{ url_for('exams.create_exam') }}" class="btn btn-primary">+ New Exam</a>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div><h1 style="font-size: 1.8rem; font-weight: 700;">Exams Schedule</h1><p style="color: var(--text-muted); margin-top: 4px;">Keep track of upcoming exams.</p></div>
+    <a href="{{ url_for('exams.create_exam') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Exam</a>
 </div>
-
-{% if exams %}
-<div class="list-group">
-    {% for e in exams %}
-    <div class="list-group-item border-0 shadow-sm rounded mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <div class="fw-semibold">🎓 {{ e.title }}</div>
-            <div class="text-muted small">
-                {{ e.subject.name }} &middot; {{ e.exam_date.strftime("%b %d, %Y %I:%M %p") }}
-                {% if e.location %} &middot; {{ e.location }}{% endif %}
-            </div>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('exams.edit_exam', exam_id=e.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-            <form method="POST" action="{{ url_for('exams.delete_exam', exam_id=e.id) }}" onsubmit="return confirm('Delete this exam?');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-            </form>
-        </div>
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead><tr><th>Exam Title</th><th>Subject</th><th>Date & Time</th><th>Location</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for exam in exams %}
+                <tr>
+                    <td style="font-weight: 500;">{{ exam.title }}</td>
+                    <td>{{ exam.subject.name }}</td>
+                    <td>{{ exam.exam_date.strftime('%b %d, %Y %I:%M %p') }}</td>
+                    <td>{{ exam.location or 'N/A' }}</td>
+                    <td style="display:flex; gap:8px;">
+                        <a href="{{ url_for('exams.edit_exam', exam_id=exam.id) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-edit"></i></a>
+                        <form method="POST" action="{{ url_for('exams.delete_exam', exam_id=exam.id) }}" onsubmit="return confirm('Delete this exam?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-trash"></i></button></form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;"><i class="fas fa-file-signature" style="font-size: 2rem; display: block; margin-bottom: 12px;"></i>No exams scheduled</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    {% endfor %}
 </div>
-{% else %}
-<div class="card border-0 shadow-sm p-5 text-center">
-    <h5 class="mb-2">No exams scheduled</h5>
-    <a href="{{ url_for('exams.create_exam') }}" class="btn btn-primary mt-2">+ Add Exam</a>
-</div>
-{% endif %}
 {% endblock %}

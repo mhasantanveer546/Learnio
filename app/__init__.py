@@ -26,6 +26,7 @@ from app.routes.notifications import notifications_bp
 from app.routes.exports import exports_bp
 from app.routes.admin import admin_bp
 from app.cli import create_admin
+from datetime import datetime as dt
 
 def create_app(config_name="development"):
     app = Flask(__name__)
@@ -88,4 +89,8 @@ def create_app(config_name="development"):
             current_user.last_seen_at = datetime.now(timezone.utc)
             db.session.commit()
 
+    @app.context_processor
+    def inject_now():
+        return {"current_year": dt.now().year}
+        
     return app

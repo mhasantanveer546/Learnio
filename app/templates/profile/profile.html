@@ -1,43 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Profile{% endblock %}
-
+{% block title %}My Profile - Learnio{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-center">
-    <div class="card border-0 shadow-sm p-4" style="max-width: 480px; width: 100%;">
-        <h4 class="fw-semibold mb-3">Your Profile</h4>
-
-        {% if current_user.profile_picture %}
-            <img src="{{ url_for('profile.serve_profile_picture', user_id=current_user.id) }}"
-                 alt="Profile picture" class="rounded-circle mb-3" width="80" height="80" style="object-fit: cover;">
-        {% endif %}
-
-        <form method="POST" enctype="multipart/form-data" novalidate>
+<div style="margin-bottom: 32px;"><h1 style="font-size: 1.8rem; font-weight: 700;">My Profile</h1></div>
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <div class="card" style="text-align: center;">
+        <img src="{% if current_user.profile_picture_key %}{{ url_for('profile.serve_profile_picture', user_id=current_user.id) }}{% else %}https://ui-avatars.com/api/?name={{ current_user.username }}&background=7c3aed&color=fff{% endif %}" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
+        <h3>{{ current_user.username }}</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">{{ current_user.email }}</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Joined: {{ current_user.created_at.strftime('%b %Y') }}</p>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title">Account Details</div><a href="{{ url_for('profile.change_password') }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;">Change Password</a></div>
+        <form method="POST" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
-
-            <div class="mb-3">
-                {{ form.username.label(class="form-label") }}
-                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
-                {% for error in form.username.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.email.label(class="form-label") }}
-                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
-                {% for error in form.email.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.profile_picture.label(class="form-label") }}
-                {{ form.profile_picture(class="form-control" + (" is-invalid" if form.profile_picture.errors else "")) }}
-                {% for error in form.profile_picture.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
-            </div>
-
-            {{ form.submit(class="btn btn-primary w-100") }}
+            <div class="form-group">{{ form.username.label(class="form-label") }}{{ form.username(class="form-control") }}</div>
+            <div class="form-group">{{ form.email.label(class="form-label") }}{{ form.email(class="form-control") }}</div>
+            <div class="form-group">{{ form.profile_picture.label(class="form-label") }}{{ form.profile_picture(class="form-control") }}</div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Profile</button>
         </form>
-
-        <p class="text-center mt-3 mb-0">
-            <a href="{{ url_for('profile.change_password') }}">Change Password</a>
-        </p>
     </div>
 </div>
 {% endblock %}

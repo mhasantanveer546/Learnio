@@ -1,86 +1,66 @@
 {% extends "base.html" %}
-{% block title %}Materials{% endblock %}
-
+{% block title %}Study Materials - Learnio{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
     <div>
-        <h2 class="fw-semibold mb-1">Materials</h2>
-        <p class="text-muted mb-0">Everything you've uploaded, across all subjects.</p>
+        <h1 style="font-size: 1.8rem; font-weight: 700;">Study Materials</h1>
+        <p style="color: var(--text-muted); margin-top: 4px;">Browse and manage your learning resources.</p>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm p-3 mb-4">
-    <form method="GET" class="row g-2 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label small">Subject</label>
-            <select name="subject_id" class="form-select form-select-sm">
-                <option value="">All Subjects</option>
-                {% for subject in subjects %}
-                    <option value="{{ subject.id }}" {{ "selected" if selected_subject == subject.id }}>
-                        {{ subject.name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small">File Type</label>
-            <select name="file_type" class="form-select form-select-sm">
-                <option value="">All Types</option>
-                {% for t in ["pdf", "docx", "pptx", "txt", "jpg", "png"] %}
-                    <option value="{{ t }}" {{ "selected" if selected_type == t }}>{{ t|upper }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small">Status</label>
-            <select name="status" class="form-select form-select-sm">
-                <option value="">All Statuses</option>
-                {% for s in ["pending", "processing", "ready", "failed"] %}
-                    <option value="{{ s }}" {{ "selected" if selected_status == s }}>{{ s|capitalize }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-sm btn-primary w-100">Filter</button>
-        </div>
+<div class="card">
+    <form method="GET" style="display: flex; gap: 12px; margin-bottom: 24px;">
+        <select name="subject_id" class="form-control" style="width: 200px;" onchange="this.form.submit()">
+            <option value="">All Subjects</option>
+            {% for subject in subjects %}<option value="{{ subject.id }}" {{ "selected" if selected_subject == subject.id }}>{{ subject.name }}</option>{% endfor %}
+        </select>
+        <select name="status" class="form-control" style="width: 150px;" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            {% for s in ["pending","processing","ready","failed"] %}<option value="{{ s }}" {{ "selected" if selected_status == s }}>{{ s|capitalize }}</option>{% endfor %}
+        </select>
     </form>
-</div>
 
-{% if materials %}
-    <div class="list-group">
-        {% for material in materials %}
-        <div class="list-group-item border-0 shadow-sm rounded mb-2 d-flex justify-content-between align-items-center">
-            <div>
-                <div class="fw-semibold">{{ material.original_name }}</div>
-                <div class="text-muted small">
-                    <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}" class="text-decoration-none">
-                        {{ material.subject.name }}
-                    </a>
-                    &middot; {{ material.file_type|upper }}
-                    &middot; {{ (material.file_size / 1024)|round(1) }} KB
-                    &middot;
-                    <span class="badge {% if material.status == 'ready' %}bg-success{% elif material.status == 'processing' %}bg-warning text-dark{% elif material.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">
-                        {{ material.status|capitalize }}
-                    </span>
-                </div>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-sm btn-outline-primary">
-                    Download
-                </a>
-                <form method="POST" action="{{ url_for('materials.delete_material', material_id=material.id) }}"
-                      onsubmit="return confirm('Delete {{ material.original_name }}? This cannot be undone.');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="table-container">
+        <table>
+            <thead><tr><th>File Name</th><th>Subject</th><th>Type</th><th>Uploaded</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for material in materials %}
+                <tr>
+                    <td style="font-weight: 500;">
+                        <i class="fas {% if material.file_type == 'pdf' %}fa-file-pdf{% elif material.file_type == 'docx' %}fa-file-word{% elif material.file_type == 'pptx' %}fa-file-powerpoint{% else %}fa-file-alt{% endif %}" style="color: var(--danger); margin-right: 8px;"></i>
+                        {{ material.original_name }}
+                    </td>
+                    <td>{{ material.subject.name }}</td>
+                    <td><span class="badge badge-info">{{ material.file_type|upper }}</span></td>
+                    <td>{{ material.created_at.strftime('%b %d, %Y') }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            {% if material.status == "ready" %}
+                                <span id="summary-status-{{ material.id }}"
+                                      class="badge {% if material.summary and material.summary.status == 'ready' %}badge-success{% elif material.summary and material.summary.status == 'processing' %}badge-warning{% else %}badge-info{% endif %}">
+                                    {% if material.summary and material.summary.status == "ready" %}Summary ready{% elif material.summary and material.summary.status == "processing" %}Generating…{% else %}No summary{% endif %}
+                                </span>
+                                <button class="btn btn-primary generate-summary-btn" style="padding: 6px 12px; font-size: 0.85rem;" data-material-id="{{ material.id }}">
+                                    <i class="fas fa-align-left"></i> {{ "Regenerate" if material.summary and material.summary.status == "ready" else "Generate" }}
+                                </button>
+                                <a id="summary-link-{{ material.id }}" href="{{ url_for('summaries.view_summary', material_id=material.id) }}" class="btn btn-outline {% if not material.summary or material.summary.status != 'ready' %}d-none{% endif %}" style="padding: 6px 10px; display:{% if not material.summary or material.summary.status != 'ready' %}none{% endif %};"><i class="fas fa-eye"></i></a>
+                            {% endif %}
+                            <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-outline" style="padding: 6px 10px;" title="Download"><i class="fas fa-download"></i></a>
+                            <form action="{{ url_for('materials.delete_material', material_id=material.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger" style="padding: 6px 10px;" title="Delete"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;"><i class="fas fa-folder-open" style="font-size: 2rem; display: block; margin-bottom: 12px;"></i>No materials uploaded yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-{% else %}
-    <div class="card border-0 shadow-sm p-5 text-center">
-        <h5 class="mb-2">No materials found</h5>
-        <p class="text-muted mb-0">Try adjusting your filters, or upload materials from a subject page.</p>
-    </div>
-{% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/materials.js') }}"></script>
 {% endblock %}

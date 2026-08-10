@@ -1,62 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Subjects{% endblock %}
-
+{% block title %}My Subjects - Learnio{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
     <div>
-        <h2 class="fw-semibold mb-1">Subjects</h2>
-        <p class="text-muted mb-0">Organize your study materials by subject.</p>
+        <h1 style="font-size: 1.8rem; font-weight: 700;">My Subjects</h1>
+        <p style="color: var(--text-muted); margin-top: 4px;">You are currently tracking {{ subjects|length }} subjects.</p>
     </div>
     <a href="{{ url_for('subjects.create_subject') }}" class="btn btn-primary">
-        + New Subject
+        <i class="fas fa-plus"></i> Add Subject
     </a>
 </div>
-
-{% if subjects %}
-    <div class="row g-3">
-        {% for subject in subjects %}
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
-                             style="width: 40px; height: 40px; background-color: {{ subject.color }}; color: white; font-weight: 600;">
-                            {{ subject.icon if subject.icon else subject.name[0]|upper }}
-                        </div>
-                        <h5 class="mb-0">
-                            <a href="{{ url_for('subjects.view_subject', subject_id=subject.id) }}" class="text-decoration-none text-dark">
-                                {{ subject.name }}
-                            </a>
-                        </h5>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('subjects.edit_subject', subject_id=subject.id) }}"
-                           class="btn btn-sm btn-outline-secondary">
-                            Edit
-                        </a>
-                        <form method="POST" action="{{ url_for('subjects.delete_subject', subject_id=subject.id) }}"
-                              onsubmit="return confirm('Delete {{ subject.name }}? This cannot be undone.');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
-                </div>
+<div class="subjects-grid">
+    {% for subject in subjects %}
+    <div class="subject-card" style="position: relative; overflow: hidden; border-left: 4px solid {{ subject.color }};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
+                <h3 class="subject-name" style="margin-bottom: 4px; font-size: 1.2rem;">{{ subject.name }}</h3>
+                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">
+                    Created {{ subject.created_at.strftime('%b %d, %Y') if subject.created_at else 'N/A' }}
+                </span>
+            </div>
+            <div style="
+                width: 48px;
+                height: 48px;
+                background: {{ subject.color }}22;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: {{ subject.color }};
+                font-size: 1.4rem;
+                font-weight: 600;
+                flex-shrink: 0;
+            ">
+                {{ subject.icon if subject.icon else subject.name[0]|upper }}
             </div>
         </div>
-        {% endfor %}
-    </div>
-{% else %}
-    <div class="card border-0 shadow-sm p-5 text-center">
-        <h5 class="mb-2">No subjects yet</h5>
-        <p class="text-muted mb-3">Create your first subject to start organizing your study materials.</p>
-        <div>
-            <a href="{{ url_for('subjects.create_subject') }}" class="btn btn-primary">
-                + Create Subject
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border-color); margin-top: auto;">
+            <span style="font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-folder-open"></i> {{ subject.materials|length }} Materials
+            </span>
+            <a href="{{ url_for('subjects.view_subject', subject_id=subject.id) }}" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">
+                View <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>
             </a>
         </div>
     </div>
-{% endif %}
+    {% else %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+        <div style="width: 80px; height: 80px; background: var(--primary-light); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+            <i class="fas fa-book" style="font-size: 2rem; color: var(--primary);"></i>
+        </div>
+        <h3 style="margin-bottom: 8px; font-size: 1.2rem;">No Subjects Yet</h3>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">Get started by adding your first subject to organize your materials.</p>
+        <a href="{{ url_for('subjects.create_subject') }}" class="btn btn-primary" style="display: inline-flex;">
+            <i class="fas fa-plus"></i> Add Your First Subject
+        </a>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}

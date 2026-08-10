@@ -1,43 +1,24 @@
 {% extends "base.html" %}
-{% block title %}{{ "Edit Exam" if is_edit else "New Exam" }}{% endblock %}
-
+{% block title %}{{ "Edit Exam" if is_edit else "Add Exam" }} - Learnio{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-center">
-    <div class="card border-0 shadow-sm p-4" style="max-width: 480px; width: 100%;">
-        <h4 class="fw-semibold mb-3">{{ "Edit Exam" if is_edit else "New Exam" }}</h4>
-
-        <form method="POST" novalidate>
-            {{ form.hidden_tag() }}
-
-            <div class="mb-3">
-                {{ form.title.label(class="form-label") }}
-                {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
-                {% for error in form.title.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.subject_id.label(class="form-label") }}
-                {{ form.subject_id(class="form-select") }}
-            </div>
-
-            <div class="mb-3">
-                {{ form.exam_date.label(class="form-label") }}
-                {{ form.exam_date(class="form-control" + (" is-invalid" if form.exam_date.errors else ""), type="datetime-local") }}
-                {% for error in form.exam_date.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.location.label(class="form-label") }}
-                {{ form.location(class="form-control") }}
-            </div>
-
-            <div class="mb-3">
-                {{ form.notes.label(class="form-label") }}
-                {{ form.notes(class="form-control", rows=3) }}
-            </div>
-
-            {{ form.submit(class="btn btn-primary w-100") }}
-        </form>
-    </div>
+<div style="margin-bottom: 32px;">
+    <a href="{{ url_for('exams.list_exams') }}" style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-arrow-left"></i> Back to Exams</a>
+    <h1 style="font-size: 1.8rem; font-weight: 700; margin-top:8px;">{{ "Edit Exam" if is_edit else "Schedule New Exam" }}</h1>
+</div>
+<div class="card" style="max-width: 700px;">
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">{{ form.title.label(class="form-label") }}{{ form.title(class="form-control", placeholder="e.g., Midterm Examination") }}</div>
+        <div class="form-group">{{ form.subject_id.label(class="form-label") }}{{ form.subject_id(class="form-control") }}</div>
+        <div style="display:flex; gap:16px;">
+            <div class="form-group" style="flex:1;">{{ form.exam_date.label(class="form-label") }}{{ form.exam_date(class="form-control", type="datetime-local") }}</div>
+            <div class="form-group" style="flex:1;">{{ form.location.label(class="form-label") }}{{ form.location(class="form-control", placeholder="e.g., Room 204") }}</div>
+        </div>
+        <div class="form-group">{{ form.notes.label(class="form-label") }}{{ form.notes(class="form-control", rows="3") }}</div>
+        <div style="display:flex; gap:12px; margin-top:24px;">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+            <a href="{{ url_for('exams.list_exams') }}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
 </div>
 {% endblock %}

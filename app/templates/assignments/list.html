@@ -1,47 +1,39 @@
 {% extends "base.html" %}
-{% block title %}Assignments{% endblock %}
-
+{% block title %}Assignments - Learnio{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-semibold mb-0">Assignments</h2>
-    <a href="{{ url_for('assignments.create_assignment') }}" class="btn btn-primary">+ New Assignment</a>
-</div>
-
-{% if assignments %}
-<div class="list-group">
-    {% for a in assignments %}
-    <div class="list-group-item border-0 shadow-sm rounded mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <div class="fw-semibold {% if a.status == 'completed' %}text-decoration-line-through text-muted{% endif %}">{{ a.title }}</div>
-            <div class="text-muted small">
-                {{ a.subject.name }} &middot; Due {{ a.due_date.strftime("%b %d, %Y %I:%M %p") }}
-                <span class="badge {% if a.priority == 'high' %}bg-danger{% elif a.priority == 'medium' %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ a.priority|capitalize }}</span>
-                <span class="badge bg-secondary">{{ a.status|replace("_", " ")|capitalize }}</span>
-            </div>
-        </div>
-        <div class="d-flex gap-2">
-            <form method="POST" action="{{ url_for('assignments.toggle_status', assignment_id=a.id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-outline-success">
-                    {{ "Mark Pending" if a.status == "completed" else "Mark Complete" }}
-                </button>
-            </form>
-            {% if a.attachment_filename %}
-            <a href="{{ url_for('assignments.download_attachment', assignment_id=a.id) }}" class="btn btn-sm btn-outline-primary">📎 Attachment</a>
-            {% endif %}
-            <a href="{{ url_for('assignments.edit_assignment', assignment_id=a.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-            <form method="POST" action="{{ url_for('assignments.delete_assignment', assignment_id=a.id) }}" onsubmit="return confirm('Delete this assignment?');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-            </form>
-        </div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <h1 style="font-size: 1.8rem; font-weight: 700;">Assignments</h1>
+        <p style="color: var(--text-muted); margin-top: 4px;">Track your upcoming assignments.</p>
     </div>
-    {% endfor %}
+    <a href="{{ url_for('assignments.create_assignment') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Assignment</a>
 </div>
-{% else %}
-<div class="card border-0 shadow-sm p-5 text-center">
-    <h5 class="mb-2">No assignments yet</h5>
-    <a href="{{ url_for('assignments.create_assignment') }}" class="btn btn-primary mt-2">+ Create Assignment</a>
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead><tr><th>Title</th><th>Subject</th><th>Due Date</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for a in assignments %}
+                <tr>
+                    <td style="font-weight: 500;">{{ a.title }}</td>
+                    <td>{{ a.subject.name }}</td>
+                    <td>{{ a.due_date.strftime('%b %d, %Y') }}</td>
+                    <td><span class="badge {{ 'badge-danger' if a.priority == 'high' else 'badge-warning' if a.priority == 'medium' else 'badge-success' }}">{{ a.priority|capitalize }}</span></td>
+                    <td><span class="badge {{ 'badge-success' if a.status == 'completed' else 'badge-info' }}">{{ a.status|replace("_"," ")|capitalize }}</span></td>
+                    <td style="display:flex; gap:8px;">
+                        <form method="POST" action="{{ url_for('assignments.toggle_status', assignment_id=a.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline" style="padding: 6px 10px; font-size: 0.8rem;">{{ "Undo" if a.status == "completed" else "Complete" }}</button>
+                        </form>
+                        {% if a.attachment_key %}<a href="{{ url_for('assignments.download_attachment', assignment_id=a.id) }}" class="btn btn-outline" style="padding: 6px 10px;"><i class="fas fa-paperclip"></i></a>{% endif %}
+                        <a href="{{ url_for('assignments.edit_assignment', assignment_id=a.id) }}" class="btn btn-outline" style="padding: 6px 10px; font-size: 0.8rem;">Edit</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;"><i class="fas fa-tasks" style="font-size: 2rem; display: block; margin-bottom: 12px;"></i>No assignments found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-{% endif %}
 {% endblock %}

@@ -1,41 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Search{% endblock %}
-
+{% block title %}Search Results - Learnio{% endblock %}
 {% block content %}
-<h4 class="fw-semibold mb-4">
-    {% if query %}Results for "{{ query }}"{% else %}Search{% endif %}
-</h4>
-
-{% if not query %}
-<div class="alert alert-info">Type something in the search bar above to get started.</div>
-
-{% elif results.subjects|length + results.materials|length + results.summaries|length + results.flashcards|length + results.assignments|length + results.exams|length == 0 %}
-<div class="alert alert-info">No results found for "{{ query }}".</div>
-
-{% else %}
-
-{% macro result_group(title, items, endpoint) %}
-    {% if items %}
-    <div class="mb-4">
-        <h6 class="text-muted small text-uppercase mb-2">{{ title }}</h6>
-        <div class="list-group">
-            {% for item in items %}
-            <a href="{{ url_for(endpoint, **item.url_kwargs) }}" class="list-group-item list-group-item-action">
-                <div class="fw-semibold">{{ item.title }}</div>
-                {% if item.subtitle %}<div class="text-muted small">{{ item.subtitle }}</div>{% endif %}
-            </a>
-            {% endfor %}
-        </div>
+<div style="margin-bottom: 32px;">
+    <h1 style="font-size: 1.8rem; font-weight: 700;">Search Results</h1>
+    <p style="color: var(--text-muted);">Showing results for: "{{ query }}"</p>
+</div>
+{% if results %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card">
+        <div class="card-title">Subjects ({{ results.subjects|length }})</div>
+        {% for item in results.subjects %}
+        <a href="{{ url_for('subjects.view_subject', **item.url_kwargs) }}" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--bg-body); margin-bottom: 8px;">
+            <div class="stat-icon" style="width: 36px; height: 36px; font-size: 1rem;"><i class="fas fa-book"></i></div>
+            <h4 style="font-size: 0.9rem; margin: 0;">{{ item.title }}</h4>
+        </a>
+        {% else %}<p style="color: var(--text-muted); text-align: center; padding: 16px;">No subjects found</p>{% endfor %}
     </div>
-    {% endif %}
-{% endmacro %}
-
-{{ result_group("Subjects", results.subjects, "subjects.view_subject") }}
-{{ result_group("Materials", results.materials, "subjects.view_subject") }}
-{{ result_group("Summaries", results.summaries, "summaries.view_summary") }}
-{{ result_group("Flashcards", results.flashcards, "flashcards.study_flashcards") }}
-{{ result_group("Assignments", results.assignments, "assignments.list_assignments") }}
-{{ result_group("Exams", results.exams, "exams.list_exams") }}
-
+    <div class="card">
+        <div class="card-title">Materials ({{ results.materials|length }})</div>
+        {% for item in results.materials %}
+        <a href="{{ url_for('subjects.view_subject', **item.url_kwargs) }}" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--bg-body); margin-bottom: 8px;">
+            <div class="stat-icon" style="width: 36px; height: 36px; font-size: 1rem;"><i class="fas fa-file-alt"></i></div>
+            <div><h4 style="font-size: 0.9rem; margin: 0;">{{ item.title }}</h4><p style="font-size:0.8rem; color:var(--text-muted); margin:0;">{{ item.subtitle }}</p></div>
+        </a>
+        {% else %}<p style="color: var(--text-muted); text-align: center; padding: 16px;">No materials found</p>{% endfor %}
+    </div>
+</div>
 {% endif %}
 {% endblock %}

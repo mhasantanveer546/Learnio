@@ -1,35 +1,19 @@
-<nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
-    <div class="container-fluid">
-        <span class="navbar-brand fw-semibold">Learnio</span>
-
-        {% if current_user.is_authenticated %}
-        <form action="{{ url_for('search.search_results') }}" method="GET" class="mx-auto position-relative" style="max-width: 400px; width: 100%;" id="global-search-form">
-            <input type="text" name="q" id="global-search-input" class="form-control form-control-sm" placeholder="Search everything..." autocomplete="off" value="{{ request.args.get('q', '') }}">
-            <div id="search-live-results" class="position-absolute bg-white shadow-sm rounded mt-1 w-100 d-none" style="z-index: 1000; max-height: 350px; overflow-y: auto;"></div>
+<header class="topnav">
+    <div class="topnav-search">
+        <i class="fas fa-search"></i>
+        <form action="{{ url_for('search.search_results') }}" method="GET" id="global-search-form" style="position: relative;">
+            <input type="text" name="q" id="global-search-input" placeholder="Search subjects, materials..." value="{{ request.args.get('q', '') }}" autocomplete="off">
+            <div id="search-live-results" style="display:none; position:absolute; top:44px; left:0; width:100%; background:white; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.1); max-height:350px; overflow-y:auto; z-index:1000;"></div>
         </form>
-        {% endif %}
-
-        <div class="d-flex align-items-center ms-auto">
-            {% if current_user.is_authenticated %}
-                {% include "components/notifications_dropdown.html" %}
-                <a href="{{ url_for('profile.view_profile') }}" class="me-3 text-muted small text-decoration-none">
-                    {{ current_user.username }}
-                </a>
-                <a id="logout-link" href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary">
-                    Log Out
-                </a>
-            {% else %}
-                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary me-2">
-                    Log In
-                </a>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-sm btn-primary">
-                    Sign Up
-                </a>
-            {% endif %}
+    </div>
+    <div class="topnav-actions">
+        {% include 'components/notifications_dropdown.html' %}
+        <div class="user-profile">
+            <img src="{% if current_user.profile_picture_key %}{{ url_for('profile.serve_profile_picture', user_id=current_user.id) }}{% else %}https://ui-avatars.com/api/?name={{ current_user.username }}&background=7c3aed&color=fff{% endif %}" alt="Avatar">
+            <div class="user-info">
+                <h4>{{ current_user.username }}</h4>
+                <p>{{ current_user.email }}</p>
+            </div>
         </div>
     </div>
-</nav>
-
-{% if current_user.is_authenticated %}
-<script src="{{ url_for('static', filename='js/search.js') }}"></script>
-{% endif %}
+</header>

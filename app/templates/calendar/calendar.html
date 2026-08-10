@@ -1,72 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Calendar{% endblock %}
-
+{% block title %}Calendar - Learnio{% endblock %}
 {% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-<style>
-    .fc-event { border: none; border-radius: 6px; padding: 2px 4px; font-size: 0.8em; }
-    .fc-toolbar-title { font-weight: 600; color: #1E293B; }
-    .fc-daygrid-day.fc-day-today { background-color: rgba(37, 99, 235, 0.06); }
-    .upcoming-item { border-left: 4px solid; }
-</style>
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet' />
 {% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-semibold mb-0">Calendar</h2>
-    <div class="d-flex gap-2">
-        <a href="{{ url_for('assignments.create_assignment') }}" class="btn btn-outline-primary btn-sm">+ Assignment</a>
-        <a href="{{ url_for('exams.create_exam') }}" class="btn btn-outline-primary btn-sm">+ Exam</a>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm p-3">
-            <div id="calendar"></div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <h6 class="fw-semibold mb-3">Upcoming (next 14 days)</h6>
-
-        {% if not upcoming_assignments and not upcoming_exams %}
-            <p class="text-muted small">Nothing due soon.</p>
-        {% endif %}
-
+<div style="margin-bottom: 32px;"><h1 style="font-size: 1.8rem; font-weight: 700;">Calendar</h1></div>
+<div style="display: grid; grid-template-columns: 3fr 1fr; gap: 24px;">
+    <div class="card"><div id="calendar"></div></div>
+    <div class="card">
+        <div class="card-title">Upcoming</div>
         {% for a in upcoming_assignments %}
-        <div class="upcoming-item card border-0 shadow-sm p-3 mb-2" style="border-left-color: {% if a.priority == 'high' %}#EF4444{% elif a.priority == 'medium' %}#F59E0B{% else %}#10B981{% endif %};">
-            <div class="fw-semibold small">📝 {{ a.title }}</div>
-            <div class="text-muted small">{{ a.subject.name }} &middot; {{ a.due_date.strftime("%b %d, %I:%M %p") }}</div>
+        <div style="display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); margin-bottom:12px;">
+            <div style="width: 40px; height: 40px; background: var(--primary-light); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size:0.9rem;">{{ a.due_date.strftime('%d') }}</div>
+            <div><h4 style="font-size: 0.9rem; margin: 0 0 4px 0;">📝 {{ a.title }}</h4><span class="badge badge-info">Assignment</span></div>
         </div>
         {% endfor %}
-
         {% for e in upcoming_exams %}
-        <div class="upcoming-item card border-0 shadow-sm p-3 mb-2" style="border-left-color: #7C3AED;">
-            <div class="fw-semibold small">🎓 {{ e.title }}</div>
-            <div class="text-muted small">{{ e.subject.name }} &middot; {{ e.exam_date.strftime("%b %d, %I:%M %p") }}</div>
+        <div style="display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); margin-bottom:12px;">
+            <div style="width: 40px; height: 40px; background: var(--primary-light); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size:0.9rem;">{{ e.exam_date.strftime('%d') }}</div>
+            <div><h4 style="font-size: 0.9rem; margin: 0 0 4px 0;">🎓 {{ e.title }}</h4><span class="badge badge-danger">Exam</span></div>
         </div>
+        {% else %}
+        {% if not upcoming_assignments %}<p style="color: var(--text-muted); text-align: center;">Nothing due soon</p>{% endif %}
         {% endfor %}
-    </div>
-</div>
-
-<div class="modal fade" id="eventModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventModalTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="eventModalBody"></div>
-            <div class="modal-footer">
-                <a id="eventModalEditLink" href="#" class="btn btn-primary btn-sm">Edit</a>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+        height: 'auto',
+        events: '/calendar/events'
+    });
+    calendar.render();
+});
+</script>
 {% endblock %}

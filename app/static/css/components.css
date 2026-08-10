@@ -1,71 +1,252 @@
-/* Flip-card flashcard UI (Phase 7) */
-#flashcard-scene {
-    perspective: 1200px;
+/* Learnio UI - Components */
+:root {
+    --primary: #7c3aed;
+    --primary-dark: #5b21b6;
+    --primary-light: #ede9fe;
+    --bg-body: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
 }
 
-.flashcard {
-    position: relative;
-    width: 100%;
-    height: 280px;
+/* Cards */
+.card {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid var(--border-color);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    border: none;
     cursor: pointer;
-    transform-style: preserve-3d;
-    transition: transform 0.5s;
+    font-size: 0.9rem;
 }
 
-.flashcard.is-flipped {
-    transform: rotateY(180deg);
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
 }
 
-.flashcard-face {
-    position: absolute;
-    inset: 0;
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.btn-outline:hover {
+    background-color: var(--bg-body);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background-color: var(--bg-card);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+.stat-info h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.stat-info p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Tables */
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tbody tr:hover {
+    background-color: var(--bg-body);
+}
+
+/* Badges */
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-success { background-color: #d1fae5; color: #065f46; }
+.badge-warning { background-color: #fef3c7; color: #92400e; }
+.badge-danger { background-color: #fee2e2; color: #991b1b; }
+.badge-info { background-color: #dbeafe; color: #1e40af; }
+.badge-primary { background-color: var(--primary-light); color: var(--primary-dark); }
+
+/* Forms */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    background-color: var(--bg-card);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+/* Progress Bars */
+.progress-container {
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    height: 8px;
+    background-color: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--primary);
+    border-radius: 4px;
+}
+
+/* Alerts */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-info { background-color: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+.alert-success { background-color: #ecfdf5; color: #065f46; border-color: #d1fae5; }
+.alert-warning { background-color: #fffbeb; color: #92400e; border-color: #fef3c7; }
+.alert-danger { background-color: #fef2f2; color: #991b1b; border-color: #fee2e2; }
+
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid rgba(124, 58, 237, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-overlay {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    padding: 2rem;
-    border-radius: 1rem;
-    backface-visibility: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    background: #FFFFFF;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 60px 20px;
+    color: var(--text-muted);
 }
-
-.flashcard-front p,
-.flashcard-back p {
-    font-size: 1.25rem;
-    font-weight: 500;
-    color: #1E293B;
-    max-height: 180px;
-    overflow-y: auto;
-}
-
-.flashcard-back {
-    transform: rotateY(180deg);
-    background: rgba(37, 99, 235, 0.04);
-}
-
-.flashcard-hint {
-    position: absolute;
-    bottom: 0.75rem;
-    font-size: 0.75rem;
-    color: #94A3B8;
-}
-
-/* Reused across quiz history + flashcards */
-.glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.bg-primary-soft { background-color: rgba(37, 99, 235, 0.1); }
-.bg-success-soft { background-color: rgba(16, 185, 129, 0.1); }
-.bg-warning-soft { background-color: rgba(245, 158, 11, 0.1); }
-.bg-danger-soft { background-color: rgba(239, 68, 68, 0.1); }
-
-.text-sm { font-size: 0.85rem; }
-
-.btn-pill { border-radius: 50rem !important; padding: 0.375rem 1.2rem; }
+.loading-overlay .spinner { width: 2rem; height: 2rem; border-width: 3px; margin-bottom: 12px; }

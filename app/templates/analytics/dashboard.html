@@ -1,37 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Analytics{% endblock %}
-
+{% block title %}Analytics - Learnio{% endblock %}
 {% block content %}
-<h4 class="fw-semibold mb-4">Analytics</h4>
-
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-semibold mb-3">Study Hours (last 14 days)</h6>
-            <canvas id="chart-study-hours"></canvas>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-semibold mb-3">Quiz Scores (recent attempts)</h6>
-            <canvas id="chart-quiz-scores"></canvas>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-semibold mb-3">Uploads (last 14 days)</h6>
-            <canvas id="chart-uploads"></canvas>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-semibold mb-3">Study Time by Subject</h6>
-            <canvas id="chart-subjects"></canvas>
-        </div>
-    </div>
+<div style="margin-bottom: 32px;">
+    <h1 style="font-size: 1.8rem; font-weight: 700;">Study Analytics</h1>
+    <p style="color: var(--text-muted); margin-top: 4px;">Insights into your learning progress.</p>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card"><div class="card-title">Study Hours (last 14 days)</div><canvas id="chart-study-hours"></canvas></div>
+    <div class="card"><div class="card-title">Quiz Scores (recent)</div><canvas id="chart-quiz-scores"></canvas></div>
+    <div class="card"><div class="card-title">Uploads (last 14 days)</div><canvas id="chart-uploads"></canvas></div>
+    <div class="card"><div class="card-title">Study Time by Subject</div><canvas id="chart-subjects"></canvas></div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>

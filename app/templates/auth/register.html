@@ -1,52 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
+
+{% block title %}Create Account - Learnio{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-center">
-    <div class="card border-0 shadow-sm p-4" style="max-width: 420px; width: 100%;">
-        <h4 class="fw-semibold mb-3">Create your account</h4>
-
-        <form method="POST" novalidate>
-            {{ form.hidden_tag() }}
-
-            <div class="mb-3">
-                {{ form.username.label(class="form-label") }}
-                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
-                {% for error in form.username.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.email.label(class="form-label") }}
-                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
-                {% for error in form.email.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.password.label(class="form-label") }}
-                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
-                {% for error in form.password.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.confirm_password.label(class="form-label") }}
-                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
-                {% for error in form.confirm_password.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-
-            {{ form.submit(class="btn btn-primary w-100") }}
-        </form>
-
-        <p class="text-center text-muted mt-3 mb-0">
-            Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
-        </p>
+<div style="text-align: center; margin-bottom: 32px;">
+    <div style="width: 60px; height: 60px; background: var(--primary); border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <i class="fas fa-graduation-cap" style="color: white; font-size: 1.8rem;"></i>
     </div>
+    <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;">Create your account</h1>
+    <p style="color: var(--text-muted);">Start your learning journey today.</p>
+</div>
+
+<div class="card">
+    <form method="POST" action="{{ url_for('auth.register') }}">
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control", placeholder="johndoe") }}
+            {% for error in form.username.errors %}<small style="color: var(--danger);">{{ error }}</small>{% endfor %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", placeholder="you@example.com") }}
+            {% for error in form.email.errors %}<small style="color: var(--danger);">{{ error }}</small>{% endfor %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control", placeholder="Create a password") }}
+            {% for error in form.password.errors %}<small style="color: var(--danger);">{{ error }}</small>{% endfor %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.confirm_password.label(class="form-label") }}
+            {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
+            {% for error in form.confirm_password.errors %}<small style="color: var(--danger);">{{ error }}</small>{% endfor %}
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 8px;">
+            Create account
+        </button>
+    </form>
+</div>
+
+<div style="text-align: center; margin-top: 24px;">
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Already have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600;">Sign in</a>
+    </p>
 </div>
 {% endblock %}

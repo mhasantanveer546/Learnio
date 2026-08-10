@@ -1,45 +1,23 @@
-<div class="sidebar bg-dark text-white p-3">
-    <h4 class="mb-4">📚 Learnio</h4>
-
-    {% if current_user.is_authenticated %}
-    <nav class="nav flex-column">
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'dashboard.dashboard' }}" href="{{ url_for('dashboard.dashboard') }}">
-            Dashboard
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('subjects.') }}" href="{{ url_for('subjects.list_subjects') }}">
-            Subjects
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('materials.') }}" href="{{ url_for('materials.list_materials') }}">
-            Materials
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('quizzes.') }}" href="{{ url_for('quizzes.configure_quiz', material_id=0) if false else '#' }}">
-            Quizzes
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('flashcards.') }}" href="#">
-            Flashcards
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'calendar.view_calendar' }}" href="{{ url_for('calendar.view_calendar') }}">
-            Calendar
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('assignments.') }}" href="{{ url_for('assignments.list_assignments') }}">
-            Assignments
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('exams.') }}" href="{{ url_for('exams.list_exams') }}">
-            Exams
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'timer.view_timer' }}" href="{{ url_for('timer.view_timer') }}">
-            Study Timer
-        </a>
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint == 'analytics.view_analytics' }}" href="{{ url_for('analytics.view_analytics') }}">
-            Analytics
-        </a>
-
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <i class="fas fa-graduation-cap"></i>
+        <h2>Learnio</h2>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="{% if request.endpoint == 'dashboard.dashboard' %}active{% endif %}"><i class="fas fa-home"></i><span>Dashboard</span></a>
+        <a href="{{ url_for('subjects.list_subjects') }}" class="{% if request.endpoint and request.endpoint.startswith('subjects.') %}active{% endif %}"><i class="fas fa-book"></i><span>Subjects</span></a>
+        <a href="{{ url_for('materials.list_materials') }}" class="{% if request.endpoint and request.endpoint.startswith('materials.') %}active{% endif %}"><i class="fas fa-folder-open"></i><span>Materials</span></a>
+        <a href="{{ url_for('calendar.view_calendar') }}" class="{% if request.endpoint == 'calendar.view_calendar' %}active{% endif %}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a>
+        <a href="{{ url_for('assignments.list_assignments') }}" class="{% if request.endpoint and request.endpoint.startswith('assignments.') %}active{% endif %}"><i class="fas fa-tasks"></i><span>Assignments</span></a>
+        <a href="{{ url_for('exams.list_exams') }}" class="{% if request.endpoint and request.endpoint.startswith('exams.') %}active{% endif %}"><i class="fas fa-file-signature"></i><span>Exams</span></a>
+        <a href="{{ url_for('timer.view_timer') }}" class="{% if request.endpoint == 'timer.view_timer' %}active{% endif %}"><i class="fas fa-stopwatch"></i><span>Study Timer</span></a>
+        <a href="{{ url_for('analytics.view_analytics') }}" class="{% if request.endpoint == 'analytics.view_analytics' %}active{% endif %}"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
         {% if current_user.is_admin %}
-        <hr class="text-white-50 my-2">
-        <a class="nav-link text-white {{ 'active fw-semibold' if request.endpoint and request.endpoint.startswith('admin.') }}" href="{{ url_for('admin.dashboard') }}">
-            ⚙️ Admin
-        </a>
+        <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}"><i class="fas fa-user-shield"></i><span>Admin</span></a>
         {% endif %}
     </nav>
-    {% endif %}
-</div>
+    <div class="sidebar-footer">
+        <a href="{{ url_for('profile.view_profile') }}"><i class="fas fa-user"></i><span>Profile</span></a>
+        <a id="logout-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    </div>
+</aside>

@@ -4,57 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>{% block title %}Learnio{% endblock %}</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/base.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
 
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
-    {% include "components/topnav.html" %}
+{% if current_user.is_authenticated %}
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-2 p-0">
-                {% include "components/sidebar.html" %}
-            </div>
+<div class="app-container">
 
-            <div class="col-lg-10">
-                <main class="p-4">
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+    {% include 'components/sidebar.html' %}
 
-                    {% block content %}{% endblock %}
-                </main>
-            </div>
-        </div>
+    <div class="main-area">
+
+        {% include 'components/topnav.html' %}
+
+        <main class="content-wrapper">
+
+{% else %}
+
+<main class="content-wrapper"
+      style="max-width: 480px; margin: 0 auto; padding-top: 60px;">
+
+{% endif %}
+
+    {% include 'components/alert.html' %}
+
+    {% block content %}{% endblock %}
+
+{% if current_user.is_authenticated %}
+
+    {% include 'components/footer.html' %}
+
+        </main>
+
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% else %}
 
-    {% if current_user.is_authenticated %}
-    <script>
-        const POMODORO_FOCUS_SECONDS = {{ 25 * 60 }};
-        const POMODORO_BREAK_SECONDS = {{ 5 * 60 }};
-    </script>
-    <script src="{{ url_for('static', filename='js/timer_widget.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
-    {% endif %}
+</main>
 
-    {% block extra_js %}{% endblock %}
+{% endif %}
+
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+{% if current_user.is_authenticated %}
+
+<script>
+    const POMODORO_FOCUS_SECONDS = {{ 25 * 60 }};
+    const POMODORO_BREAK_SECONDS = {{ 5 * 60 }};
+</script>
+
+<script src="{{ url_for('static', filename='js/timer_widget.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+
+{% endif %}
+
+{% block scripts %}{% endblock %}
+
 </body>
 </html>
