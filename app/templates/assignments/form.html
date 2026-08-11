@@ -10,7 +10,7 @@
         {{ form.hidden_tag() }}
         <div class="form-group">{{ form.title.label(class="form-label") }}{{ form.title(class="form-control", placeholder="e.g., Chapter 5 Exercises") }}</div>
         <div class="form-group">{{ form.subject_id.label(class="form-label") }}{{ form.subject_id(class="form-control") }}</div>
-        <div style="display:flex; gap:16px;">
+        <div class="form-row-flex" style="display:flex; gap:16px;">
             <div class="form-group" style="flex:1;">{{ form.due_date.label(class="form-label") }}{{ form.due_date(class="form-control", type="datetime-local") }}</div>
             <div class="form-group" style="flex:1;">{{ form.priority.label(class="form-label") }}{{ form.priority(class="form-control") }}</div>
             <div class="form-group" style="flex:1;">{{ form.status.label(class="form-label") }}{{ form.status(class="form-control") }}</div>

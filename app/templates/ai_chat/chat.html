@@ -6,6 +6,15 @@
     .chat-bubble.user { align-self: flex-end; background-color: var(--primary); color: white; border-bottom-right-radius: 2px; }
     .chat-bubble.assistant { align-self: flex-start; background-color: var(--bg-body); border: 1px solid var(--border-color); border-bottom-left-radius: 2px; }
     .chat-sources { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
+    @media (max-width: 767px) {
+        .chat-bubble { max-width: 88%; }
+    }
+    @media (max-width: 575px) {
+        .chat-card { height: calc(100vh - 210px) !important; }
+        #chat-messages { padding: 16px !important; }
+        #chat-form { padding: 12px !important; }
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -24,7 +33,7 @@
     <label for="mode-solve" class="btn btn-outline" style="cursor:pointer;">🛠️ Solve</label>
 </div>
 
-<div class="card" style="height: calc(100vh - 260px); display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+<div class="card chat-card" style="height: calc(100vh - 260px); display: flex; flex-direction: column; padding: 0; overflow: hidden;">
     <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
         {% if not messages %}
         <div style="text-align:center; color:var(--text-muted); padding:40px 0;">Ask a question about this material to get started.</div>

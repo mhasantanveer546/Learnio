@@ -9,7 +9,7 @@
 </div>
 
 <div class="card">
-    <form method="GET" style="display: flex; gap: 12px; margin-bottom: 24px;">
+    <form method="GET" class="filter-form" style="display: flex; gap: 12px; margin-bottom: 24px;">
         <select name="subject_id" class="form-control" style="width: 200px;" onchange="this.form.submit()">
             <option value="">All Subjects</option>
             {% for subject in subjects %}<option value="{{ subject.id }}" {{ "selected" if selected_subject == subject.id }}>{{ subject.name }}</option>{% endfor %}

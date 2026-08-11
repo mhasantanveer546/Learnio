@@ -27,6 +27,7 @@
 <div class="app-container">
 
     {% include 'components/sidebar.html' %}
+    <div class="sidebar-backdrop" aria-hidden="true"></div>
 
     <div class="main-area">
 
@@ -36,7 +37,7 @@
 
 {% else %}
 
-<main class="content-wrapper"
+<main class="content-wrapper auth-wrapper"
       style="max-width: 480px; margin: 0 auto; padding-top: 60px;">
 
 {% endif %}

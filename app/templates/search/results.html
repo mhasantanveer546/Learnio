@@ -6,7 +6,7 @@
     <p style="color: var(--text-muted);">Showing results for: "{{ query }}"</p>
 </div>
 {% if results %}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+<div class="grid-stack-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
     <div class="card">
         <div class="card-title">Subjects ({{ results.subjects|length }})</div>
         {% for item in results.subjects %}

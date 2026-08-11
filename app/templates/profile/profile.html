@@ -2,8 +2,8 @@
 {% block title %}My Profile - Learnio{% endblock %}
 {% block content %}
 <div style="margin-bottom: 32px;"><h1 style="font-size: 1.8rem; font-weight: 700;">My Profile</h1></div>
-<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
-    <div class="card" style="text-align: center;">
+<div class="grid-stack-tablet" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <div class="card profile-avatar-card" style="text-align: center;">
         <img src="{% if current_user.profile_picture_key %}{{ url_for('profile.serve_profile_picture', user_id=current_user.id) }}{% else %}https://ui-avatars.com/api/?name={{ current_user.username }}&background=7c3aed&color=fff{% endif %}" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
         <h3>{{ current_user.username }}</h3>
         <p style="color: var(--text-muted); font-size: 0.9rem;">{{ current_user.email }}</p>

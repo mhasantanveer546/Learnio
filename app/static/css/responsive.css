@@ -1,36 +1,173 @@
-/* Learnio UI - Responsive */
-@media (max-width: 1024px) {
+/* ==========================================================================
+   Learnio UI — Responsive Stylesheet
+   1. Global fixes   2. Navigation   3. Layout   4. Typography
+   5. Cards/Grids    6. Tables       7. Forms    8. Buttons
+   9. Subjects/Materials  10. Quiz   11. Flashcards  12. Timer
+   13. Analytics     14. Calendar    15. Profile/Settings
+   16. Landing/Auth  17. Small mobile (<=400px)  18. Reduced motion
+   ========================================================================== */
+
+/* ==========================================================================
+   1. GLOBAL RESPONSIVE FIXES
+   ========================================================================== */
+
+img, svg, video, canvas {
+    max-width: 100%;
+}
+
+button, input, select, textarea {
+    font: inherit;
+}
+
+.app-container,
+.main-area,
+.content-wrapper {
+    min-width: 0;
+}
+
+h1, h2, h3, h4, p, span, td, a, strong, small {
+    overflow-wrap: break-word;
+}
+
+/* ==========================================================================
+   2. NAVIGATION
+   ========================================================================== */
+
+.sidebar-toggle-btn {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 999;
+}
+
+/* ---- Desktop/Tablet: 992px - 1199px ---- */
+@media (max-width: 1199px) {
+    .content-wrapper {
+        padding: 28px 32px;
+    }
+}
+
+/* ---- Tablet: 768px - 991px — condensed icon-rail sidebar (existing behavior kept) ---- */
+@media (max-width: 991px) {
+    .sidebar {
+        width: 80px;
+        padding: 16px 8px;
+    }
+    .sidebar-logo h2,
+    .sidebar-nav a span,
+    .sidebar-footer a span {
+        display: none;
+    }
+    .sidebar-logo {
+        justify-content: center;
+        padding: 0 0 20px 0;
+    }
+    .sidebar-nav a,
+    .sidebar-footer a {
+        justify-content: center;
+        padding: 12px;
+    }
+    .main-area {
+        margin-left: 80px;
+        width: calc(100% - 80px);
+    }
+    .topnav {
+        padding: 0 20px;
+    }
+    .topnav-search {
+        width: 220px;
+    }
+    .content-wrapper {
+        padding: 24px;
+    }
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 768px) {
+/* ---- Mobile: <=767px — off-canvas drawer sidebar ---- */
+@media (max-width: 767px) {
     .sidebar {
-        width: 80px;
-        padding: 16px 8px;
+        width: 240px;
+        max-width: 78%;
+        padding: 18px 12px;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
     }
-    .sidebar-logo h2, .sidebar-nav a span, .sidebar-footer a span {
-        display: none;
+    .sidebar.active {
+        transform: translateX(0);
+        box-shadow: 8px 0 30px rgba(0,0,0,0.15);
+    }
+
+    .sidebar-logo h2,
+    .sidebar-nav a span,
+    .sidebar-footer a span {
+        display: inline;
     }
     .sidebar-logo {
-        justify-content: center;
-        padding: 0 0 24px 0;
+        justify-content: flex-start;
+        padding: 0 6px 16px 6px;
+        gap: 8px;
+        margin-bottom: 16px;
     }
-    .sidebar-nav a {
-        justify-content: center;
-        padding: 12px;
+    .sidebar-logo i {
+        font-size: 20px;
     }
-    
+    .sidebar-logo h2 {
+        font-size: 1.05rem;
+    }
+
+    .sidebar-nav {
+        gap: 2px;
+    }
+    .sidebar-nav a,
+    .sidebar-footer a {
+        justify-content: flex-start;
+        padding: 10px 12px;
+        gap: 10px;
+        font-size: 0.85rem;
+    }
+    .sidebar-nav a i,
+    .sidebar-footer a i {
+        font-size: 0.95rem;
+        width: 16px;
+    }
+    .sidebar-footer {
+        padding-top: 12px;
+    }
+    .sidebar.active ~ .sidebar-backdrop {
+        display: block;
+    }
+
     .main-area {
-        margin-left: 80px;
-        width: calc(100% - 80px);
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .sidebar-toggle-btn {
+        display: flex;
     }
 
     .topnav {
         padding: 0 16px;
+        gap: 12px;
     }
-    
     .topnav-search {
         display: none;
     }
@@ -41,25 +178,372 @@
 
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
 
     .user-profile .user-info {
         display: none;
     }
+
+    /* Notifications dropdown must never overflow the viewport */
+    #notif-dropdown-menu {
+        position: fixed !important;
+        left: 16px !important;
+        right: 16px !important;
+        top: 64px !important;
+        width: auto !important;
+    }
 }
 
-@media (max-width: 480px) {
-    .topnav-actions .icon-btn {
-        width: 36px;
-        height: 36px;
+/* ==========================================================================
+   3. LAYOUT
+   ========================================================================== */
+
+@media (max-width: 575px) {
+    .content-wrapper {
+        padding: 16px 14px;
     }
-    .btn {
-        width: 100%;
-        justify-content: center;
+    .card {
+        padding: 18px;
     }
+}
+
+@media (max-width: 400px) {
+    .content-wrapper {
+        padding: 14px 10px;
+    }
+    .card {
+        padding: 14px;
+    }
+}
+
+/* ==========================================================================
+   4. TYPOGRAPHY
+   ========================================================================== */
+
+/* Desktop and tablet (>767px): untouched — inline sizes render exactly as designed */
+
+@media (max-width: 767px) {
+    h1 {
+        font-size: clamp(1.35rem, 4.5vw, 1.65rem) !important;
+    }
+    h2 {
+        font-size: clamp(1.2rem, 4vw, 1.45rem) !important;
+    }
+}
+
+@media (max-width: 575px) {
+    h1 {
+        font-size: clamp(1.2rem, 5.5vw, 1.4rem) !important;
+    }
+    h2 {
+        font-size: clamp(1.05rem, 5vw, 1.25rem) !important;
+    }
+    body {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    h1 {
+        font-size: clamp(1.05rem, 6.5vw, 1.2rem) !important;
+    }
+}
+/* ==========================================================================
+   5. CARDS / GRIDS
+   ========================================================================== */
+
+/* Utility classes added to specific fixed-ratio grid divs in templates */
+@media (max-width: 991px) {
+    .grid-stack-tablet {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .grid-stack-mobile {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 575px) {
     .card-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
+    }
+    .card-header > a,
+    .card-header > .btn {
+        align-self: stretch;
+        justify-content: center;
+    }
+    
+}
+/* Page header rows: title block + action button/badge that must not overlap */
+.page-header-flex {
+    flex-wrap: wrap;
+}
+.page-header-flex > *:first-child {
+    min-width: 0;
+}
+
+@media (max-width: 575px) {
+    .page-header-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 14px;
+    }
+    .page-header-flex > *:first-child {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   6. TABLES
+   ========================================================================== */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-container table {
+    min-width: 600px;
+}
+
+@media (max-width: 575px) {
+    th, td {
+        padding: 12px 10px;
+        font-size: 0.85rem;
+    }
+}
+
+/* ==========================================================================
+   7. FORMS
+   ========================================================================== */
+
+.form-row-flex {
+    flex-wrap: wrap;
+}
+.form-row-flex > * {
+    min-width: 160px;
+}
+
+.filter-form {
+    flex-wrap: wrap;
+}
+.filter-form select {
+    flex: 1 1 160px;
+}
+
+@media (max-width: 575px) {
+    .form-row-flex {
+        flex-direction: column;
+    }
+    .form-row-flex > * {
+        width: 100%;
+    }
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-form select {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   8. BUTTONS
+   ========================================================================== */
+
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@media (max-width: 575px) {
+    .topnav-actions {
+        gap: 12px;
+    }
+    .topnav-actions .icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ==========================================================================
+   9. SUBJECTS / MATERIALS
+   ========================================================================== */
+
+@media (max-width: 575px) {
+    [id^="summary-controls-"] {
+        gap: 6px;
+    }
+}
+
+/* ==========================================================================
+   10. QUIZ
+   ========================================================================== */
+
+@media (max-width: 480px) {
+    .tf-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .quiz-option {
+        padding: 12px !important;
+    }
+}
+
+/* ==========================================================================
+   11. FLASHCARDS
+   ========================================================================== */
+
+@media (max-width: 575px) {
+    #flashcard,
+    #flashcard-inner {
+        min-height: 300px !important;
+    }
+    #flashcard-inner > div {
+        padding: 22px !important;
+    }
+    #card-front {
+        font-size: 1.15rem !important;
+    }
+    #card-back {
+        font-size: 1rem !important;
+    }
+}
+
+@media (max-width: 400px) {
+    #flashcard,
+    #flashcard-inner {
+        min-height: 260px !important;
+    }
+    #flashcard-inner > div {
+        padding: 16px !important;
+    }
+}
+
+/* ==========================================================================
+   12. TIMER
+   ========================================================================== */
+
+@media (max-width: 575px) {
+    #timer-display {
+        font-size: clamp(2.6rem, 16vw, 5rem) !important;
+    }
+    #timer-start,
+    #timer-stop {
+        width: auto !important;
+        flex: 1;
+    }
+    #floating-timer-widget {
+        left: 12px !important;
+        right: 12px !important;
+        bottom: 12px !important;
+        width: auto !important;
+        justify-content: space-between !important;
+    }
+}
+
+/* ==========================================================================
+   13. ANALYTICS
+   ========================================================================== */
+
+@media (max-width: 767px) {
+    .card canvas {
+        max-height: 260px;
+    }
+}
+
+/* ==========================================================================
+   14. CALENDAR
+   ========================================================================== */
+
+@media (max-width: 767px) {
+    .fc .fc-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.1rem !important;
+    }
+}
+
+/* ==========================================================================
+   15. PROFILE / SETTINGS
+   ========================================================================== */
+
+@media (max-width: 767px) {
+    .profile-avatar-card img {
+        width: 90px !important;
+        height: 90px !important;
+    }
+}
+
+/* ==========================================================================
+   16. LANDING / AUTH PAGES
+   ========================================================================== */
+
+@media (max-width: 575px) {
+    .auth-wrapper {
+        padding: 16px 14px !important;
+        padding-top: 32px !important;
+    }
+    .error-code {
+        font-size: clamp(3rem, 20vw, 6rem) !important;
+    }
+}
+
+/* ==========================================================================
+   17. SMALL MOBILE (<=400px)
+   ========================================================================== */
+
+@media (max-width: 400px) {
+    .sidebar {
+        width: 210px;
+        max-width: 82%;
+    }
+    .sidebar-nav a,
+    .sidebar-footer a {
+        font-size: 0.8rem;
+        padding: 9px 10px;
+    }
+    .btn {
+        padding: 9px 14px;
+        font-size: 0.85rem;
+    }
+    .stat-card {
+        padding: 16px;
+        gap: 14px;
+    }
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.15rem;
+    }
+    .stat-info h3 {
+        font-size: 1.4rem;
+    }
+    .topnav-actions .icon-btn {
+        width: 34px;
+        height: 34px;
+    }
+}
+
+/* ==========================================================================
+   18. REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
