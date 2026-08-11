@@ -38,8 +38,12 @@ async function pollStatus(materialId, badge) {
 }
 
 function revealSummaryControls(materialId) {
-    const summaryControls = document.getElementById(`summary-controls-${materialId}`);
-    if (summaryControls) summaryControls.classList.remove("d-none");
+    const summaryControls =
+        document.getElementById(`summary-controls-${materialId}`);
+
+    if (summaryControls) {
+        summaryControls.style.display = "flex";
+    }
 }
 
 function updateBadge(badge, status) {
@@ -59,11 +63,18 @@ function updateBadge(badge, status) {
 function handleGenerationComplete(status, btn, linkId) {
     if (btn) {
         btn.disabled = false;
-        if (status === "ready") btn.textContent = "Regenerate";
+
+        if (status === "ready") {
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Regenerate';
+        }
     }
+
     if (status === "ready") {
         const link = document.getElementById(linkId);
-        if (link) link.classList.remove("d-none");
+
+        if (link) {
+            link.style.display = "inline-flex";
+        }
     }
 }
 

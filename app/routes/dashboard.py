@@ -17,7 +17,7 @@ def dashboard():
     subject_count = Subject.query.filter_by(user_id=current_user.id).count()
     material_count = StudyMaterial.query.filter_by(user_id=current_user.id).count()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     upcoming_assignments = (
         Assignment.query.filter(
             Assignment.user_id == current_user.id,

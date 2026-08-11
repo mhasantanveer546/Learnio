@@ -222,3 +222,37 @@ a {
     font-size: 0.8rem;
     color: var(--text-muted);
 }
+
+.sidebar-footer {
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sidebar-footer a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    color: rgba(255,255,255,0.78);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.sidebar-footer a i {
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-footer a:hover {
+    background: rgba(255,255,255,0.1);
+    color: #ffffff;
+}
+
+.sidebar-footer a:hover i {
+    color: #ffffff;
+}

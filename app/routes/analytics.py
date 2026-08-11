@@ -21,7 +21,7 @@ def study_hours_data():
     """Study minutes per day, last 14 days — split into subject-scoped
     vs general (unscoped) study time, per the design decision to keep
     that distinction visible rather than merging it into one number."""
-    since = datetime.now(timezone.utc) - timedelta(days=14)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=14) - timedelta(days=14)
     sessions = StudySession.query.filter(
         StudySession.user_id == current_user.id,
         StudySession.started_at >= since,
@@ -68,7 +68,7 @@ def quiz_scores_data():
 @login_required
 def uploads_data():
     """Materials uploaded per day, last 14 days."""
-    since = datetime.now(timezone.utc) - timedelta(days=14)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=14)
     materials = StudyMaterial.query.filter(
         StudyMaterial.user_id == current_user.id, StudyMaterial.created_at >= since
     ).all()
