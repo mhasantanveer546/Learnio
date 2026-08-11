@@ -1,157 +1,265 @@
 {% extends "base.html" %}
-{% block title %}Quiz Results{% endblock %}
+
+{% block title %}Quiz Review - Learnio{% endblock %}
 
 {% block content %}
 
-<div class="card border-0 shadow-sm p-4 mb-4 text-center">
-    {% if attempt.score is not none and attempt.total %}
-        <h3 class="fw-semibold mb-1">
-            {{ attempt.score }} / {{ attempt.total }}
-        </h3>
-        <p class="text-muted mb-3">
-            {{ ((attempt.score / attempt.total) * 100)|round(0) }}%
+<div style="margin-bottom: 30px;">
+
+<a href="{{ url_for('quizzes.quiz_history', material_id=attempt.quiz.material_id) }}"
+   style="color: var(--text-muted); font-size: 0.85rem; display: inline-block; margin-bottom: 10px;">
+    <i class="fas fa-arrow-left"></i> Back to Quiz History
+</a>
+
+<div style="
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+">
+
+    <div>
+
+        <span class="badge badge-primary">
+            {{ attempt.quiz.difficulty|capitalize }}
+        </span>
+
+        <h1 style="font-size: 1.8rem; font-weight: 700; margin-top: 10px;">
+            {{ attempt.quiz.title }}
+        </h1>
+
+        <p style="color: var(--text-muted); margin-top: 5px;">
+            Attempted {{ attempt.started_at.strftime('%b %d, %Y at %I:%M %p') }}
         </p>
-        <div class="d-flex justify-content-center">
-            <a href="{{ url_for('exports.export_quiz_review', attempt_id=attempt.id) }}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-file-pdf me-1"></i> Export Review (PDF)
-            </a>
+
+    </div>
+
+    <div class="card"
+         style="min-width: 130px; text-align: center; padding: 18px;">
+
+        <div style="
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        ">
+            {{ attempt.score_percentage }}%
         </div>
-    {% else %}
-        <h3 class="fw-semibold mb-1">Quiz Review</h3>
-        <p class="text-muted mb-0">
-            Your final score will be available after grading is complete.
-        </p>
-    {% endif %}
+
+        <div style="
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        ">
+            Final Score
+        </div>
+
+    </div>
+
 </div>
+
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 18px;">
 
 {% for answer in attempt.answers %}
 
-<div class="card border-0 shadow-sm p-4 mb-3">
+<div class="card"
+     style="
+         border-left: 4px solid
+         {% if answer.is_correct == true %}
+             var(--success)
+         {% elif answer.is_correct == false %}
+             var(--danger)
+         {% else %}
+             var(--border-color)
+         {% endif %};
+     ">
 
-<p class="text-muted small mb-1">
-    Question {{ loop.index }}
-    &middot;
-    {{ answer.question.question_type|replace("_", " ")|capitalize }}
-</p>
+    <div style="
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 16px;
+    ">
 
-<h6 class="mb-3">{{ answer.question.question_text }}</h6>
+        <div style="display: flex; gap: 12px;">
 
-{% if answer.question.question_type == "mcq" %}
+            <div style="
+                width: 34px;
+                height: 34px;
+                border-radius: 9px;
+                background: var(--primary-light);
+                color: var(--primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+            ">
+                {{ loop.index }}
+            </div>
 
-    {% set options = answer.question.options | from_json %}
-    {% set submitted_option = options
-        | selectattr("0", "equalto", answer.submitted_answer)
-        | list
-        | first %}
-    {% set correct_option = options
-        | selectattr("0", "equalto", answer.question.correct_answer)
-        | list
-        | first %}
+            <div>
 
-    <p class="mb-1">
-        <strong>Your answer:</strong>
-        {{ submitted_option or "(no answer)" }}
-    </p>
+                <span style="
+                    color: var(--text-muted);
+                    font-size: 0.72rem;
+                    text-transform: uppercase;
+                ">
+                    {{ answer.question.question_type|replace('_', ' ') }}
+                </span>
 
-    <p class="mb-2">
-        <strong>Correct answer:</strong>
-        {{ correct_option }}
-    </p>
+                <h3 style="
+                    font-size: 1rem;
+                    line-height: 1.6;
+                    margin-top: 4px;
+                ">
+                    {{ answer.question.question_text }}
+                </h3>
 
-    {% if answer.is_correct %}
-        <span class="badge bg-success">Correct</span>
-    {% else %}
-        <span class="badge bg-danger">Incorrect</span>
-    {% endif %}
+            </div>
 
-{% elif answer.question.question_type == "true_false" %}
+        </div>
 
-    <p class="mb-1">
-        <strong>Your answer:</strong>
-        {% if answer.submitted_answer %}
-            {{ answer.submitted_answer|capitalize }}
+        {% if answer.is_correct == true %}
+
+            <span class="badge badge-success">
+                <i class="fas fa-check"></i> Correct
+            </span>
+
+        {% elif answer.is_correct == false %}
+
+            <span class="badge badge-danger">
+                <i class="fas fa-times"></i> Incorrect
+            </span>
+
         {% else %}
-            (no answer)
+
+            <span class="badge badge-warning">
+                <i class="fas fa-clock"></i> Self Grade
+            </span>
+
         {% endif %}
-    </p>
 
-    <p class="mb-2">
-        <strong>Correct answer:</strong>
-        {{ answer.question.correct_answer|capitalize }}
-    </p>
+    </div>
 
-    {% if answer.is_correct %}
-        <span class="badge bg-success">Correct</span>
-    {% else %}
-        <span class="badge bg-danger">Incorrect</span>
+    <div style="
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 15px;
+    ">
+
+        <div style="
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            margin-bottom: 6px;
+        ">
+            Your Answer
+        </div>
+
+        <div style="line-height: 1.6;">
+            {{ answer.submitted_answer or 'No answer submitted.' }}
+        </div>
+
+    </div>
+
+    {% if answer.question.question_type in ['short', 'long'] and answer.is_correct is none %}
+
+    <div style="
+        margin-top: 16px;
+        padding: 14px;
+        background: var(--primary-light);
+        border-radius: 10px;
+        color: var(--primary);
+        font-size: 0.85rem;
+    ">
+        <i class="fas fa-info-circle"></i>
+        This answer requires self-assessment.
+    </div>
+
+    <div style="
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+    ">
+
+        <button type="button"
+                class="btn btn-outline self-grade-btn"
+                data-answer-id="{{ answer.id }}"
+                data-correct="true">
+            <i class="fas fa-check"></i> Mark Correct
+        </button>
+
+        <button type="button"
+                class="btn btn-outline self-grade-btn"
+                data-answer-id="{{ answer.id }}"
+                data-correct="false">
+            <i class="fas fa-times"></i> Mark Incorrect
+        </button>
+
+    </div>
+
     {% endif %}
+
+</div>
 
 {% else %}
 
-    <p class="mb-1">
-        <strong>Your answer:</strong>
-        {{ answer.submitted_answer or "(no answer)" }}
-    </p>
-
-    <p class="mb-2">
-        <strong>Suggested answer:</strong>
-        {{ answer.question.correct_answer }}
-    </p>
-
-    {% if answer.is_correct is none %}
-
-        <div
-            class="btn-group btn-group-sm self-grade-group"
-            data-answer-id="{{ answer.id }}"
-        >
-            <button
-                class="btn btn-outline-success grade-btn"
-                data-correct="true"
-            >
-                ✓ I got it right
-            </button>
-
-            <button
-                class="btn btn-outline-danger grade-btn"
-                data-correct="false"
-            >
-                ✗ I got it wrong
-            </button>
-        </div>
-
-    {% elif answer.is_correct %}
-
-        <span class="badge bg-success">
-            Marked correct
-        </span>
-
-    {% else %}
-
-        <span class="badge bg-danger">
-            Marked incorrect
-        </span>
-
-    {% endif %}
-
-{% endif %}
-
+<div class="card"
+     style="text-align: center; padding: 50px; color: var(--text-muted);">
+    <i class="fas fa-clipboard"
+       style="font-size: 2rem; margin-bottom: 12px;"></i>
+    <p>No answers are available for this attempt.</p>
 </div>
+
 {% endfor %}
 
 
-href="{{ url_for('quizzes.quiz_history', material_id=attempt.quiz.material_id) }}"
-class="btn btn-outline-secondary"
-
->
-
-View Quiz History
-
-</a>
+</div>
 
 {% endblock %}
 
 {% block extra_js %}
 
-<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+<script>
+document.querySelectorAll('.self-grade-btn').forEach(function(button) {
+
+    button.addEventListener('click', async function() {
+
+        const answerId = this.dataset.answerId;
+        const isCorrect = this.dataset.correct === 'true';
+
+        this.disabled = true;
+
+        try {
+
+            const response = await fetch(
+                "{{ url_for('quizzes.self_grade_route', answer_id=0) }}".replace('/0', '/' + answerId),
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        is_correct: isCorrect
+                    })
+                }
+            );
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                this.disabled = false;
+            }
+
+        } catch (error) {
+            this.disabled = false;
+            console.error(error);
+        }
+
+    });
+
+});
+</script>
 
 {% endblock %}

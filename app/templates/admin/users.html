@@ -1,43 +1,176 @@
 {% extends "base.html" %}
-{% block title %}Manage Users{% endblock %}
+
+{% block title %}User Management - Learnio{% endblock %}
 
 {% block content %}
-<h4 class="fw-semibold mb-4">Manage Users</h4>
 
-<div class="table-responsive">
-    <table class="table align-middle bg-white shadow-sm rounded">
-        <thead>
-            <tr>
-                <th>Username</th><th>Email</th><th>Joined</th><th>Last Seen</th><th>Status</th><th>Action</th>
-            </tr>
-        </thead>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
+    <div>
+        <a href="{{ url_for('admin.dashboard') }}"
+           style="color: var(--text-muted); font-size: 0.85rem; display: inline-block; margin-bottom: 8px;">
+            <i class="fas fa-arrow-left"></i> Admin Dashboard
+        </a>
+
+    <h1 style="font-size: 1.8rem; font-weight: 700; margin: 0;">
+        User Management
+    </h1>
+
+    <p style="color: var(--text-muted); margin-top: 6px;">
+        Manage Learnio user accounts and access.
+    </p>
+</div>
+
+<div style="padding: 10px 14px; background: var(--primary-light); color: var(--primary); border-radius: 10px; font-weight: 600;">
+    {{ users|length }} Users
+</div>
+
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Joined</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+
         <tbody>
+
             {% for user in users %}
+
             <tr>
-                <td>{{ user.username }}{% if user.is_admin %} <span class="badge bg-primary">Admin</span>{% endif %}</td>
+
+                <td>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+
+                        <div style="
+                            width: 38px;
+                            height: 38px;
+                            border-radius: 50%;
+                            background: var(--primary-light);
+                            color: var(--primary);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-weight: 700;
+                            flex-shrink: 0;
+                        ">
+                            {{ user.username[0]|upper }}
+                        </div>
+
+                        <div>
+                            <div style="font-weight: 600;">
+                                {{ user.username }}
+                            </div>
+                        </div>
+
+                    </div>
+                </td>
+
                 <td>{{ user.email }}</td>
-                <td>{{ user.created_at.strftime("%b %d, %Y") }}</td>
-                <td>{{ user.last_seen_at.strftime("%b %d, %Y %H:%M") if user.last_seen_at else "Never" }}</td>
+
+                <td>
+                    {% if user.created_at %}
+                        {{ user.created_at.strftime('%b %d, %Y') }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if user.is_admin %}
+                        <span class="badge badge-danger">
+                            <i class="fas fa-shield-alt"></i> Admin
+                        </span>
+                    {% else %}
+                        <span class="badge badge-info">
+                            User
+                        </span>
+                    {% endif %}
+                </td>
+
                 <td>
                     {% if user.is_active %}
-                        <span class="badge bg-success">Active</span>
+                        <span class="badge badge-success">
+                            <i class="fas fa-check-circle"></i> Active
+                        </span>
                     {% else %}
-                        <span class="badge bg-danger">Suspended</span>
+                        <span class="badge badge-warning">
+                            <i class="fas fa-pause-circle"></i> Suspended
+                        </span>
                     {% endif %}
                 </td>
-                <td>
-                    {% if not user.is_admin %}
-                        <form method="POST" action="{{ url_for('admin.reactivate_user' if not user.is_active else 'admin.suspend_user', user_id=user.id) }}" class="d-inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm {{ 'btn-outline-success' if not user.is_active else 'btn-outline-danger' }}">
-                                {{ "Reactivate" if not user.is_active else "Suspend" }}
-                            </button>
-                        </form>
+
+                <td style="text-align: right;">
+
+                    {% if user.is_active %}
+
+                    <form method="POST"
+                          action="{{ url_for('admin.suspend_user', user_id=user.id) }}"
+                          style="display: inline;">
+                        {{ csrf_token() if csrf_token is defined }}
+
+                        <button type="submit"
+                                class="btn btn-outline"
+                                style="padding: 7px 12px; font-size: 0.82rem;"
+                                {% if user.id == current_user.id %}disabled{% endif %}>
+                            <i class="fas fa-ban"></i> Suspend
+                        </button>
+                    </form>
+
+                    {% else %}
+
+                    <form method="POST"
+                          action="{{ url_for('admin.reactivate_user', user_id=user.id) }}"
+                          style="display: inline;">
+                        {{ csrf_token() if csrf_token is defined }}
+
+                        <button type="submit"
+                                class="btn btn-primary"
+                                style="padding: 7px 12px; font-size: 0.82rem;">
+                            <i class="fas fa-check"></i> Reactivate
+                        </button>
+                    </form>
+
                     {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="6"
+                    style="text-align: center; color: var(--text-muted); padding: 50px 20px;">
+
+                    <i class="fas fa-users"
+                       style="font-size: 2.2rem; display: block; margin-bottom: 14px;"></i>
+
+                    <strong style="display: block; margin-bottom: 5px;">
+                        No users found
+                    </strong>
+
+                    <span style="font-size: 0.9rem;">
+                        There are currently no registered users.
+                    </span>
+
                 </td>
             </tr>
+
             {% endfor %}
+
         </tbody>
     </table>
 </div>
+
+
+</div>
+
 {% endblock %}

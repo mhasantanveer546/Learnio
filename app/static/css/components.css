@@ -230,6 +230,16 @@ tbody tr:hover {
 .alert-warning { background-color: #fffbeb; color: #92400e; border-color: #fef3c7; }
 .alert-danger { background-color: #fef2f2; color: #991b1b; border-color: #fee2e2; }
 
+.loading-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+.loading-overlay .spinner { width: 2rem; height: 2rem; border-width: 3px; margin-bottom: 12px; }
+
 .spinner {
     display: inline-block;
     width: 1em;
@@ -241,12 +251,5 @@ tbody tr:hover {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.loading-overlay {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-}
-.loading-overlay .spinner { width: 2rem; height: 2rem; border-width: 3px; margin-bottom: 12px; }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

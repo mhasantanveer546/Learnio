@@ -1,81 +1,201 @@
 {% extends "base.html" %}
 
-{% block title %}Create Quiz | Learnio{% endblock %}
+{% block title %}Configure Quiz - Learnio{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-4">
-    
-    <!-- Page Header with History Button -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+
+<div style="max-width: 850px; margin: 0 auto;">
+
+<div style="margin-bottom: 30px;">
+    <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}"
+       style="color: var(--text-muted); font-size: 0.9rem; display: inline-block; margin-bottom: 10px;">
+        <i class="fas fa-arrow-left"></i> Back to Subject
+    </a>
+    <a href="{{ url_for('quizzes.quiz_history', material_id=material.id) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;">
+        <i class="fas fa-history"></i> History
+    </a>
+
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        ">
+            <i class="fas fa-brain"></i>
+        </div>
+
         <div>
-            <h1 class="h3 mb-1 fw-bold">Create a Quiz</h1>
-            <p class="text-muted mb-0">Source Material: <span class="fw-semibold text-dark">{{ material.original_name }}</span></p>
-        </div>
-        <a href="{{ url_for('quizzes.quiz_history', material_id=material.id) }}" class="btn btn-outline-secondary btn-pill shadow-sm px-3">
-            <i class="fas fa-clock-rotate-left me-2"></i> View History
-        </a>
-    </div>
+            <h1 style="font-size: 1.8rem; font-weight: 700; margin: 0;">
+                Configure Quiz
+            </h1>
 
-    <!-- Centered Configuration Card -->
-    <div class="d-flex justify-content-center">
-        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5" style="max-width: 500px; width: 100%;">
-            <h4 class="fw-semibold mb-4">Quiz Configuration</h4>
-
-            <form method="POST" action="{{ url_for('quizzes.generate_quiz_route', material_id=material.id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <!-- Number of Questions -->
-                <div class="mb-4">
-                    <label class="form-label text-muted text-uppercase text-sm fw-bold mb-2">Number of Questions</label>
-                    <select name="num_questions" class="form-select form-select-lg border-0 bg-light rounded-3">
-                        <option value="5">5 Questions</option>
-                        <option value="10" selected>10 Questions</option>
-                        <option value="15">15 Questions</option>
-                        <option value="20">20 Questions</option>
-                    </select>
-                </div>
-
-                <!-- Question Types (Using Toggle Switches for modern UI) -->
-                <div class="mb-4">
-                    <label class="form-label text-muted text-uppercase text-sm fw-bold mb-2 d-block">Question Types</label>
-                    <div class="d-flex flex-wrap gap-4 mt-2">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="question_types" value="mcq" id="type-mcq" checked>
-                            <label class="form-check-label" for="type-mcq">Multiple Choice</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="question_types" value="true_false" id="type-tf" checked>
-                            <label class="form-check-label" for="type-tf">True / False</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="question_types" value="short" id="type-short">
-                            <label class="form-check-label" for="type-short">Short Answer</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="question_types" value="long" id="type-long">
-                            <label class="form-check-label" for="type-long">Long Answer</label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Difficulty -->
-                <div class="mb-4">
-                    <label class="form-label text-muted text-uppercase text-sm fw-bold mb-2">Difficulty</label>
-                    <select name="difficulty" class="form-select form-select-lg border-0 bg-light rounded-3">
-                        <option value="easy">Easy</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="hard">Hard</option>
-                        <option value="mixed">Mixed</option>
-                    </select>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="btn btn-primary btn-pill w-100 py-2-5 mt-2 fw-semibold shadow-sm" style="padding-top: 0.6rem; padding-bottom: 0.6rem;">
-                    <i class="fas fa-wand-magic-sparkles me-2"></i> Generate Quiz
-                </button>
-            </form>
+            <p style="color: var(--text-muted); margin: 4px 0 0;">
+                Create a quiz from <strong>{{ material.original_name }}</strong>
+            </p>
         </div>
     </div>
-    
 </div>
+
+<div class="card">
+
+    <form method="POST"
+        action="{{ url_for('quizzes.generate_quiz_route', material_id=material.id) }}">
+
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 24px;
+        ">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <i class="fas fa-sparkles"
+                   style="color: var(--primary); margin-top: 3px;"></i>
+
+                <div>
+                    <strong>AI Quiz Generator</strong>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin: 5px 0 0;">
+                        Choose how you want your quiz to be generated from this material.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="num_questions">
+                Number of Questions
+            </label>
+
+            <input type="number"
+                   id="num_questions"
+                   name="num_questions"
+                   class="form-control"
+                   value="10"
+                   min="1"
+                   max="50"
+                   required>
+        </div>
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Question Types
+            </label>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+
+                <label style="
+                    border: 1px solid var(--border-color);
+                    border-radius: 10px;
+                    padding: 14px;
+                    cursor: pointer;
+                ">
+                    <input type="checkbox"
+                           name="question_types"
+                           value="mcq"
+                           checked>
+                    <strong style="margin-left: 6px;">Multiple Choice</strong>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px;">
+                        Choose one correct option
+                    </div>
+                </label>
+
+                <label style="
+                    border: 1px solid var(--border-color);
+                    border-radius: 10px;
+                    padding: 14px;
+                    cursor: pointer;
+                ">
+                    <input type="checkbox"
+                           name="question_types"
+                           value="true_false"
+                           checked>
+                    <strong style="margin-left: 6px;">True / False</strong>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px;">
+                        Answer true or false
+                    </div>
+                </label>
+
+                <label style="
+                    border: 1px solid var(--border-color);
+                    border-radius: 10px;
+                    padding: 14px;
+                    cursor: pointer;
+                ">
+                    <input type="checkbox"
+                           name="question_types"
+                           value="short">
+                    <strong style="margin-left: 6px;">Short Answer</strong>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px;">
+                        Requires self-assessment
+                    </div>
+                </label>
+
+                <label style="
+                    border: 1px solid var(--border-color);
+                    border-radius: 10px;
+                    padding: 14px;
+                    cursor: pointer;
+                ">
+                    <input type="checkbox"
+                           name="question_types"
+                           value="long">
+                    <strong style="margin-left: 6px;">Long Answer</strong>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px;">
+                        Detailed written response
+                    </div>
+                </label>
+
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="difficulty">
+                Difficulty
+            </label>
+
+            <select id="difficulty"
+                    name="difficulty"
+                    class="form-control">
+
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+                <option value="mixed">Mixed</option>
+
+            </select>
+        </div>
+
+        <div style="
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        ">
+            <button type="submit"
+                    class="btn btn-primary"
+                    style="flex: 1; justify-content: center;">
+                <i class="fas fa-magic"></i>
+                Generate Quiz
+            </button>
+
+            <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}"
+               class="btn btn-outline">
+                Cancel
+            </a>
+        </div>
+
+    </form>
+
+</div>
+
+</div>
+
 {% endblock %}

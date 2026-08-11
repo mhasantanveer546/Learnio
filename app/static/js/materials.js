@@ -120,10 +120,10 @@ async function pollSummaryStatus(materialId, badge, btn) {
 }
 
 function updateSummaryBadge(badge, status) {
-    const labels = { pending: "No summary yet", processing: "Generating…", ready: "Summary ready", failed: "Generation failed" };
+    const labels = { pending: "No summary yet", processing: '<span class="spinner"></span> Generating…', ready: "Summary ready", failed: "Generation failed" };
     const classes = { pending: "bg-secondary", processing: "bg-warning text-dark", ready: "bg-success", failed: "bg-danger" };
 
-    badge.textContent = labels[status] || status;
+    badge.innerHTML = labels[status] || status;
     badge.className = `badge ${classes[status] || "bg-secondary"}`;
 }
 

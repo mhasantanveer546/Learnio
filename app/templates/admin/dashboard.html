@@ -1,25 +1,139 @@
 {% extends "base.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+
+{% block title %}Admin Dashboard - Learnio{% endblock %}
 
 {% block content %}
-<h4 class="fw-semibold mb-4">Admin Dashboard</h4>
 
-<div class="row g-3 mb-4">
-    {% for label, value in [
-        ("Total Users", stats.total_users),
-        ("Subjects", stats.total_subjects),
-        ("Study Materials", stats.total_materials),
-        ("Quiz Attempts", stats.total_quiz_attempts),
-        ("Storage Used", stats.storage_mb ~ " MB"),
-    ] %}
-    <div class="col-md-2-4 col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 text-center h-100">
-            <div class="fs-4 fw-bold text-primary">{{ value }}</div>
-            <div class="text-muted small">{{ label }}</div>
+<div style="margin-bottom: 32px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div>
+            <h1 style="font-size: 1.8rem; font-weight: 700; margin: 0;">Admin Dashboard</h1>
+            <p style="color: var(--text-muted); margin: 4px 0 0;">System overview and platform statistics.</p>
         </div>
     </div>
-    {% endfor %}
 </div>
 
-<a href="{{ url_for('admin.list_users') }}" class="btn btn-primary">Manage Users</a>
+<div class="stats-grid">
+
+<div class="stat-card">
+    <div class="stat-icon">
+        <i class="fas fa-users"></i>
+    </div>
+    <div class="stat-info">
+        <h3>{{ stats.total_users }}</h3>
+        <p>Total Users</p>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">
+        <i class="fas fa-book"></i>
+    </div>
+    <div class="stat-info">
+        <h3>{{ stats.total_subjects }}</h3>
+        <p>Total Subjects</p>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">
+        <i class="fas fa-file-alt"></i>
+    </div>
+    <div class="stat-info">
+        <h3>{{ stats.total_materials }}</h3>
+        <p>Study Materials</p>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">
+        <i class="fas fa-question-circle"></i>
+    </div>
+    <div class="stat-info">
+        <h3>{{ stats.total_quiz_attempts }}</h3>
+        <p>Quiz Attempts</p>
+    </div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
+
+<div class="card">
+    <div class="card-header">
+        <div>
+            <div class="card-title">Platform Overview</div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                Current system usage
+            </p>
+        </div>
+
+        <a href="{{ url_for('admin.list_users') }}"
+           class="btn btn-outline"
+           style="padding: 7px 12px; font-size: 0.85rem;">
+            <i class="fas fa-users"></i> Manage Users
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+
+        <div style="padding: 20px; border: 1px solid var(--border-color); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i class="fas fa-database" style="color: var(--primary);"></i>
+                <span style="font-weight: 600;">Storage Used</span>
+            </div>
+
+            <div style="font-size: 1.6rem; font-weight: 700;">
+                {{ stats.storage_mb }} MB
+            </div>
+
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                Uploaded study material
+            </div>
+        </div>
+
+        <div style="padding: 20px; border: 1px solid var(--border-color); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i class="fas fa-chart-line" style="color: var(--primary);"></i>
+                <span style="font-weight: 600;">Quiz Activity</span>
+            </div>
+
+            <div style="font-size: 1.6rem; font-weight: 700;">
+                {{ stats.total_quiz_attempts }}
+            </div>
+
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                Total quiz attempts
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Quick Actions</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+
+        <a href="{{ url_for('admin.list_users') }}"
+           class="btn btn-outline"
+           style="justify-content: flex-start;">
+            <i class="fas fa-users"></i>
+            Manage Users
+        </a>
+
+        <div style="padding: 14px; background: var(--bg-body); border-radius: 10px; color: var(--text-muted); font-size: 0.85rem;">
+            <i class="fas fa-info-circle"></i>
+            Use user management to activate or suspend accounts.
+        </div>
+
+    </div>
+</div>
+
+</div>
+
 {% endblock %}

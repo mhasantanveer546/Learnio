@@ -1,78 +1,401 @@
 {% extends "base.html" %}
-{% block title %}Flashcards — {{ material.original_name }}{% endblock %}
+
+{% block title %}Study Flashcards - Learnio{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-semibold mb-1">Flashcards</h2>
-        <p class="text-muted mb-0">{{ material.original_name }}</p>
-    </div>
-    <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}" class="btn btn-outline-secondary btn-sm">
-        ← Back to Subject
+
+<div style="max-width: 800px; margin: 0 auto;">
+
+<div style="margin-bottom: 28px;">
+
+    <a href="{{ url_for('subjects.view_subject', subject_id=material.subject_id) }}"
+       style="color: var(--text-muted); font-size: 0.85rem; display: inline-block; margin-bottom: 10px;">
+        <i class="fas fa-arrow-left"></i> Back to Subject
     </a>
-</div>
 
-<div class="d-flex justify-content-center">
-    <div style="max-width: 640px; width: 100%;">
+    <div style="
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    ">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-muted" id="card-position">Card 1 of {{ flashcard_set.cards|length }}</span>
-            <span class="text-muted" id="learned-count">{{ flashcard_set.learned_count }} learned</span>
+        <div>
+            <span class="badge badge-primary">
+                <i class="fas fa-layer-group"></i> Flashcards
+            </span>
+
+            <h1 style="font-size: 1.8rem; font-weight: 700; margin-top: 10px;">
+                Study Session
+            </h1>
+
+            <p style="color: var(--text-muted); margin-top: 4px;">
+                {{ material.original_name }}
+            </p>
         </div>
 
-        <div class="progress mb-4" style="height: 6px;">
-            <div class="progress-bar bg-success" id="progress-bar" role="progressbar" style="width: 0%;"></div>
-        </div>
-
-        <div id="flashcard-scene" data-card-index="0">
-            <div class="flashcard" id="flashcard">
-                <div class="flashcard-face flashcard-front">
-                    <p id="card-front-text" class="mb-0"></p>
-                    <span class="flashcard-hint">Tap to flip</span>
-                </div>
-                <div class="flashcard-face flashcard-back">
-                    <p id="card-back-text" class="mb-0"></p>
-                    <span class="flashcard-hint">Tap to flip back</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="d-flex justify-content-center gap-2 mt-4">
-            <button class="btn btn-outline-danger btn-sm" id="rate-hard">Hard</button>
-            <button class="btn btn-outline-warning btn-sm" id="rate-medium">Medium</button>
-            <button class="btn btn-outline-success btn-sm" id="rate-easy">Easy</button>
-        </div>
-
-        <div class="form-check form-switch d-flex justify-content-center mt-3">
-            <input class="form-check-input me-2" type="checkbox" id="mark-learned">
-            <label class="form-check-label" for="mark-learned">Mark as learned</label>
-        </div>
-
-        <div class="d-flex justify-content-between mt-4">
-            <button class="btn btn-outline-primary" id="prev-card">← Previous</button>
-            <button class="btn btn-primary" id="next-card">Next →</button>
+        <div style="
+            padding: 10px 14px;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.85rem;
+        ">
+            <i class="fas fa-check-circle" style="color: var(--success);"></i>
+            <span id="learned-count">{{ flashcard_set.learned_count }}</span>
+            /
+            {{ flashcard_set.cards|length }}
+            learned
         </div>
 
     </div>
+
 </div>
 
-<script id="flashcard-data" type="application/json">
-{
-    "cards": [
-        {% for card in flashcard_set.cards %}
-        {
-            "id": {{ card.id }},
-            "front": {{ card.front_text|tojson }},
-            "back": {{ card.back_text|tojson }},
-            "difficulty": {{ card.difficulty|tojson }},
-            "is_learned": {{ card.is_learned|tojson }}
-        }{{ "," if not loop.last }}
-        {% endfor %}
-    ]
-}
-</script>
+{% if flashcard_set.cards %}
+
+<div style="margin-bottom: 18px;">
+
+    <div style="
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        margin-bottom: 7px;
+    ">
+        <span id="card-counter">Card 1 of {{ flashcard_set.cards|length }}</span>
+        <span id="progress-percent">0%</span>
+    </div>
+
+    <div class="progress-bar">
+        <div id="study-progress"
+             class="progress-fill"
+             style="width: 0%; transition: width 0.3s ease;">
+        </div>
+    </div>
+
+</div>
+
+<div id="flashcard"
+     style="
+         min-height: 360px;
+         perspective: 1000px;
+         cursor: pointer;
+         margin-bottom: 22px;
+     ">
+
+    <div id="flashcard-inner"
+         style="
+             position: relative;
+             width: 100%;
+             min-height: 360px;
+             transition: transform 0.55s ease;
+             transform-style: preserve-3d;
+         ">
+
+        <div style="
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            background: var(--bg-card, white);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 36px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+         ">
+
+            <span class="badge badge-primary" style="margin-bottom: 20px;">
+                Question
+            </span>
+
+            <h2 id="card-front"
+                style="
+                    font-size: 1.45rem;
+                    line-height: 1.6;
+                    max-width: 650px;
+                ">
+            </h2>
+
+            <p style="
+                color: var(--text-muted);
+                font-size: 0.82rem;
+                margin-top: 28px;
+            ">
+                <i class="fas fa-hand-pointer"></i>
+                Click the card to reveal the answer
+            </p>
+
+        </div>
+
+        <div style="
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            transform: rotateY(180deg);
+            background: var(--primary);
+            color: white;
+            border-radius: 18px;
+            padding: 36px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        ">
+
+            <span style="
+                background: rgba(255,255,255,0.18);
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                margin-bottom: 20px;
+            ">
+                Answer
+            </span>
+
+            <p id="card-back"
+               style="
+                   font-size: 1.15rem;
+                   line-height: 1.7;
+                   max-width: 650px;
+               ">
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div style="
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 22px;
+">
+
+    <button type="button"
+            id="again-btn"
+            class="btn btn-outline">
+        <i class="fas fa-redo"></i>
+        Need Practice
+    </button>
+
+    <button type="button"
+            id="easy-btn"
+            class="btn btn-primary">
+        <i class="fas fa-check"></i>
+        I Know This
+    </button>
+
+</div>
+
+<div style="
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+">
+
+    <button type="button"
+            id="previous-btn"
+            class="btn btn-outline">
+        <i class="fas fa-arrow-left"></i>
+        Previous
+    </button>
+
+    <button type="button"
+            id="next-btn"
+            class="btn btn-outline">
+        Next
+        <i class="fas fa-arrow-right"></i>
+    </button>
+
+</div>
+
+{% else %}
+
+<div class="card"
+     style="text-align: center; padding: 60px 20px;">
+
+    <i class="fas fa-layer-group"
+       style="font-size: 2.5rem; color: var(--primary); margin-bottom: 18px;"></i>
+
+    <h3>No flashcards available</h3>
+
+    <p style="color: var(--text-muted); margin-top: 6px;">
+        This flashcard set does not contain any cards yet.
+    </p>
+
+</div>
+
+{% endif %}
+
+
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/flashcards.js') }}"></script>
+
+{% if flashcard_set.cards %}
+
+<script>
+const cards = [
+    {% for card in flashcard_set.cards %}
+    {
+        id: {{ card.id }},
+        front: {{ card.front_text|tojson }},
+        back: {{ card.back_text|tojson }},
+        difficulty: {{ card.difficulty|tojson }},
+        learned: {{ card.is_learned|tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+let currentIndex = 0;
+let flipped = false;
+
+const inner = document.getElementById('flashcard-inner');
+const front = document.getElementById('card-front');
+const back = document.getElementById('card-back');
+const counter = document.getElementById('card-counter');
+const progress = document.getElementById('study-progress');
+const percent = document.getElementById('progress-percent');
+const learnedCount = document.getElementById('learned-count');
+
+function renderCard() {
+
+    const card = cards[currentIndex];
+
+    front.textContent = card.front;
+    back.textContent = card.back;
+
+    counter.textContent =
+        `Card ${currentIndex + 1} of ${cards.length}`;
+
+    const percentage =
+        Math.round(((currentIndex + 1) / cards.length) * 100);
+
+    progress.style.width = percentage + '%';
+    percent.textContent = percentage + '%';
+
+    flipped = false;
+    inner.style.transform = 'rotateY(0deg)';
+
+    document.getElementById('previous-btn').disabled =
+        currentIndex === 0;
+
+    document.getElementById('next-btn').disabled =
+        currentIndex === cards.length - 1;
+}
+
+function flipCard() {
+
+    flipped = !flipped;
+
+    inner.style.transform =
+        flipped
+        ? 'rotateY(180deg)'
+        : 'rotateY(0deg)';
+}
+
+async function markCard(isLearned, difficulty) {
+
+    const card = cards[currentIndex];
+
+    try {
+
+        const response = await fetch(
+            `/flashcards/card/${card.id}/mark`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    is_learned: isLearned,
+                    difficulty: difficulty
+                })
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+
+        card.learned = data.is_learned;
+        card.difficulty = data.difficulty;
+
+        learnedCount.textContent = data.learned_count;
+
+    } catch (error) {
+        console.error('Failed to update flashcard:', error);
+    }
+}
+
+document.getElementById('flashcard')
+    .addEventListener('click', flipCard);
+
+document.getElementById('previous-btn')
+    .addEventListener('click', function() {
+
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderCard();
+        }
+
+    });
+
+document.getElementById('next-btn')
+    .addEventListener('click', function() {
+
+        if (currentIndex < cards.length - 1) {
+            currentIndex++;
+            renderCard();
+        }
+
+    });
+
+document.getElementById('easy-btn')
+    .addEventListener('click', function() {
+        markCard(true, 'easy');
+    });
+
+document.getElementById('again-btn')
+    .addEventListener('click', function() {
+        markCard(false, 'hard');
+    });
+
+document.addEventListener('keydown', function(event) {
+
+    if (event.code === 'Space') {
+        event.preventDefault();
+        flipCard();
+    }
+
+    if (event.key === 'ArrowLeft' && currentIndex > 0) {
+        currentIndex--;
+        renderCard();
+    }
+
+    if (event.key === 'ArrowRight' && currentIndex < cards.length - 1) {
+        currentIndex++;
+        renderCard();
+    }
+
+});
+
+renderCard();
+</script>
+
+{% endif %}
+
 {% endblock %}
