@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Learnio - Learn Smarter. Study Faster.</title>
+
+    <meta
+        name="description"
+        content="Learnio is your intelligent study companion for smarter learning, AI-powered quizzes, flashcards, summaries and focused study sessions."
+    >
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/landing.css') }}">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+</head>
+
+<body>
+
+<nav class="landing-nav">
+
+    <a href="{{ url_for('main.landing') }}" class="landing-brand">
+        <span class="brand-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </span>
+
+        <span>Learnio</span>
+    </a>
+
+    <div class="landing-nav-actions">
+        <a href="{{ url_for('auth.login') }}" class="nav-login">
+            Sign in
+        </a>
+
+        <a href="{{ url_for('auth.register') }}" class="nav-register">
+            Get Started
+        </a>
+    </div>
+
+</nav>
+
+
+<main>
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <div class="hero-badge">
+                <i class="fas fa-sparkles"></i>
+                Your intelligent study companion
+            </div>
+
+            <h1>
+                Learn Smarter.
+                <span>Study Faster.</span>
+            </h1>
+
+            <p>
+                Turn your study materials into summaries, quizzes,
+                flashcards and focused study sessions — all in one place.
+            </p>
+
+            <div class="hero-actions">
+
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                    Login
+                </a>
+
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline">
+                    Get Started
+                </a>
+            </div>
+
+            <div class="hero-trust">
+                <div>
+                    <i class="fas fa-check"></i>
+                    AI-powered learning
+                </div>
+
+                <div>
+                    <i class="fas fa-check"></i>
+                    Smart progress tracking
+                </div>
+
+                <div>
+                    <i class="fas fa-check"></i>
+                    Focused study sessions
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="hero-visual">
+
+            <div class="dashboard-preview">
+
+                <div class="preview-top">
+                    <div>
+                        <small>Good morning 👋</small>
+                        <strong>Ready to learn?</strong>
+                    </div>
+
+                    <div class="preview-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+
+
+                <div class="preview-stats">
+
+                    <div class="preview-stat">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <strong>2.5h</strong>
+                            <span>Study time</span>
+                        </div>
+                    </div>
+
+                    <div class="preview-stat">
+                        <i class="fas fa-fire"></i>
+                        <div>
+                            <strong>7 days</strong>
+                            <span>Study streak</span>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="preview-card">
+
+                    <div class="preview-card-header">
+                        <strong>Study Progress</strong>
+                        <span>Weekly</span>
+                    </div>
+
+                    <div class="fake-chart">
+
+                        <div class="chart-bar" style="height: 35%;"></div>
+                        <div class="chart-bar" style="height: 55%;"></div>
+                        <div class="chart-bar" style="height: 45%;"></div>
+                        <div class="chart-bar" style="height: 75%;"></div>
+                        <div class="chart-bar" style="height: 60%;"></div>
+                        <div class="chart-bar" style="height: 85%;"></div>
+                        <div class="chart-bar active" style="height: 95%;"></div>
+
+                    </div>
+
+                    <div class="chart-days">
+                        <span>M</span>
+                        <span>T</span>
+                        <span>W</span>
+                        <span>T</span>
+                        <span>F</span>
+                        <span>S</span>
+                        <span>S</span>
+                    </div>
+
+                </div>
+
+
+                <div class="preview-learning">
+
+                    <div class="learning-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+
+                    <div>
+                        <strong>AI Quiz Ready</strong>
+                        <span>10 questions generated</span>
+                    </div>
+
+                    <i class="fas fa-arrow-right"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- FEATURES -->
+
+    <section class="features-section">
+
+        <div class="section-heading">
+
+            <span class="section-label">
+                EVERYTHING YOU NEED
+            </span>
+
+            <h2>
+                A smarter way to study
+            </h2>
+
+            <p>
+                Learnio brings your entire study workflow together
+                so you can spend less time organizing and more time learning.
+            </p>
+
+        </div>
+
+
+        <div class="features-grid">
+
+            <div class="feature-card">
+
+                <div class="feature-icon purple">
+                    <i class="fas fa-file-lines"></i>
+                </div>
+
+                <h3>Smart Materials</h3>
+
+                <p>
+                    Upload your study material and keep everything
+                    organized by subject.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon blue">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                </div>
+
+                <h3>AI Summaries</h3>
+
+                <p>
+                    Quickly turn lengthy learning material into
+                    useful summaries.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon green">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+
+                <h3>Flashcards</h3>
+
+                <p>
+                    Generate flashcards from your materials and
+                    revise important concepts efficiently.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon orange">
+                    <i class="fas fa-circle-question"></i>
+                </div>
+
+                <h3>AI Quizzes</h3>
+
+                <p>
+                    Test your understanding with automatically
+                    generated quizzes.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon pink">
+                    <i class="fas fa-stopwatch"></i>
+                </div>
+
+                <h3>Focus Timer</h3>
+
+                <p>
+                    Use focused study sessions to build better
+                    study habits and stay productive.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon cyan">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+
+                <h3>Track Progress</h3>
+
+                <p>
+                    See your study activity, performance and
+                    learning progress over time.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CTA -->
+
+    <section class="cta-section">
+
+        <div class="cta-content">
+
+            <div class="cta-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+
+            <h2>
+                Ready to study smarter?
+            </h2>
+
+            <p>
+                Start building better learning habits with Learnio.
+            </p>
+
+            <a href="{{ url_for('auth.register') }}"
+               class="cta-button">
+                Create Your Account
+                <i class="fas fa-arrow-right"></i>
+            </a>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer class="landing-footer">
+
+    <div class="landing-brand">
+        <span class="brand-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </span>
+
+        <span>Learnio</span>
+    </div>
+
+    <p>
+        Learn Smarter. Study Faster.
+    </p>
+
+    <span>
+        © 2026 Learnio
+    </span>
+
+</footer>
+
+</body>
+</html>

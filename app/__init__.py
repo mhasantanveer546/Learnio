@@ -27,6 +27,7 @@ from app.routes.exports import exports_bp
 from app.routes.admin import admin_bp
 from app.cli import create_admin
 from datetime import datetime as dt
+from app.routes.main import main_bp
 
 def create_app(config_name="development"):
     app = Flask(__name__)
@@ -45,8 +46,10 @@ def create_app(config_name="development"):
     login_manager.init_app(app)
     csrf.init_app(app)
 
-    app.register_blueprint(dashboard_bp)
+       
+    app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(dashboard_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(subjects_bp)
     app.register_blueprint(materials_bp)
@@ -62,8 +65,7 @@ def create_app(config_name="development"):
     app.register_blueprint(analytics_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(exports_bp)
-    app.register_blueprint(admin_bp)
-
+    app.register_blueprint(admin_bp) 
     app.cli.add_command(create_admin)
 
     @app.errorhandler(404)
