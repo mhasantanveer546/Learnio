@@ -14,6 +14,10 @@ class Config:
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-secret-for-dev-only")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,   # test each connection before using it; auto-reconnect if stale
+        "pool_recycle": 280,     # recycle connections before Neon's own idle timeout kicks in
+    }
 
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
     TESSERACT_CMD = os.environ.get("TESSERACT_CMD")  # optional — only needed if tesseract isn't on system PATH
