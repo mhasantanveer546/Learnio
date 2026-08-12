@@ -4,7 +4,7 @@ from app import create_app
 
 # Reads FLASK_ENV from .env so the same entry point works for both
 # `python app.py` locally and any WSGI server in production.
-config_name = os.environ.get("FLASK_ENV", "development")
+config_name = os.environ.get("FLASK_ENV", "production")
 
 app = create_app(config_name)
 
