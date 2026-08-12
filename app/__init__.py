@@ -39,7 +39,8 @@ def create_app(config_name="development"):
         if not app.config.get("SQLALCHEMY_DATABASE_URI"):
             raise RuntimeError("DATABASE_URL environment variable must be set in production")
 
-    os.makedirs(os.path.join(app.root_path, "..", "instance"), exist_ok=True)
+    if config_name != "production":
+        os.makedirs(os.path.join(app.root_path, "..", "instance"), exist_ok=True)
 
     db.init_app(app)
     migrate.init_app(app, db)
