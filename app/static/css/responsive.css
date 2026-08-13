@@ -56,6 +56,29 @@ h1, h2, h3, h4, p, span, td, a, strong, small {
     z-index: 999;
 }
 
+/* ---- Laptop: 1200px - 1440px — previously uncovered gap, affects common
+   1366px and 1280px laptop screens which were getting full desktop sizing ---- */
+@media (max-width: 1440px) {
+    .content-wrapper {
+        padding: 24px 28px;
+    }
+    .stat-info h3 {
+        font-size: 1.25rem;
+    }
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
+    }
+    .page-header-flex h1 {
+        font-size: 1.5rem !important;
+    }
+    .sidebar-nav a {
+        font-size: 0.9rem;
+        padding: 10px 12px;
+    }
+}
+
 /* ---- Desktop/Tablet: 992px - 1199px ---- */
 @media (max-width: 1199px) {
     .content-wrapper {
