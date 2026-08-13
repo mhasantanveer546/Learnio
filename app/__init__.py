@@ -25,7 +25,7 @@ from app.routes.analytics import analytics_bp
 from app.routes.notifications import notifications_bp
 from app.routes.exports import exports_bp
 from app.routes.admin import admin_bp
-from app.cli import create_admin
+from app.cli import create_admin, seed_demo
 from datetime import datetime as dt
 from app.routes.main import main_bp
 
@@ -70,6 +70,7 @@ def create_app(config_name="development"):
     app.register_blueprint(exports_bp)
     app.register_blueprint(admin_bp) 
     app.cli.add_command(create_admin)
+    app.cli.add_command(seed_demo)
 
     @app.errorhandler(404)
     def page_not_found(error):

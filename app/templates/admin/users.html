@@ -113,7 +113,7 @@
                     <form method="POST"
                           action="{{ url_for('admin.suspend_user', user_id=user.id) }}"
                           style="display: inline;">
-                        {{ csrf_token() if csrf_token is defined }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                         <button type="submit"
                                 class="btn btn-outline"
