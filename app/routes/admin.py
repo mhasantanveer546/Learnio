@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required
 
 from app.extensions import db
@@ -41,7 +41,8 @@ def suspend_user(user_id):
     user = User.query.get_or_404(user_id)
     user.is_active = False
     db.session.commit()
-    return {"success": True}
+    flash(f"'{user.email}' has been suspended.", "success")
+    return redirect(url_for("admin.list_users"))
 
 
 @admin_bp.route("/users/<int:user_id>/reactivate", methods=["POST"])
@@ -51,4 +52,5 @@ def reactivate_user(user_id):
     user = User.query.get_or_404(user_id)
     user.is_active = True
     db.session.commit()
-    return {"success": True}
+    flash(f"'{user.email}' has been reactivated.", "success")
+    return redirect(url_for("admin.list_users"))
