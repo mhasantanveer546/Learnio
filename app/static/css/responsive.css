@@ -58,24 +58,18 @@ h1, h2, h3, h4, p, span, td, a, strong, small {
 
 /* ---- Laptop: 1200px - 1440px — previously uncovered gap, affects common
    1366px and 1280px laptop screens which were getting full desktop sizing ---- */
+/* ---- Laptop: 1200px - 1440px — scale the root font-size down so every
+   rem-based measurement (nearly everything on this site) shrinks together,
+   instead of overriding dozens of individual rules ---- */
 @media (max-width: 1440px) {
+    html {
+        font-size: 87.5%;   /* 16px -> 14px base; ~12.5% smaller everywhere */
+    }
     .content-wrapper {
         padding: 24px 28px;
     }
-    .stat-info h3 {
-        font-size: 1.25rem;
-    }
-    .stat-icon {
-        width: 42px;
-        height: 42px;
-        font-size: 1.1rem;
-    }
     .page-header-flex h1 {
         font-size: 1.5rem !important;
-    }
-    .sidebar-nav a {
-        font-size: 0.9rem;
-        padding: 10px 12px;
     }
 }
 
