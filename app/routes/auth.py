@@ -50,7 +50,7 @@ def login():
                 flash("Your Learnio account has been suspended. Please contact an administrator.", "danger")
                 return render_template("auth/login.html", form=form)
 
-            login_user(user, remember=form.remember_me.data)
+            login_user(user, remember=False)
             user.last_seen_at = datetime.now(timezone.utc)
             db.session.commit()
 
