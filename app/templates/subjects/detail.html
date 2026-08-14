@@ -45,7 +45,13 @@
 
 <div class="card">
 
-<div class="card-header">
+<div class="card-header" style="
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+">
     <div>
         <div class="card-title">
             <i class="fas fa-folder-open" style="margin-right: 8px;"></i>
@@ -60,8 +66,95 @@
             {{ subject.materials|length }} material{{ '' if subject.materials|length == 1 else 's' }}
         </p>
     </div>
+
+    <button
+        type="button"
+        id="toggle-upload-material"
+        class="btn btn-primary"
+        aria-controls="upload-material-panel"
+        aria-expanded="false"
+    >
+        <i class="fas fa-plus"></i>
+        Add Material
+    </button>
 </div>
 
+<div
+    id="upload-material-panel"
+    style="
+        display: none;
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-body);
+    "
+>
+    <form
+        method="POST"
+        action="{{ url_for('materials.upload_material') }}"
+        enctype="multipart/form-data"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
+
+        <input
+            type="hidden"
+            name="subject_id"
+            value="{{ subject.id }}"
+        >
+
+        <label
+            for="study-material-file"
+            style="
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 600;
+            "
+        >
+            Choose study material
+        </label>
+
+        <input
+            id="study-material-file"
+            type="file"
+            name="file"
+            accept=".pdf,.docx,.pptx,.txt,.jpg,.jpeg,.png"
+            required
+            style="
+                display: block;
+                width: 100%;
+                margin-bottom: 14px;
+            "
+        >
+
+        <p style="
+            margin: 0 0 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        ">
+            Supported formats: PDF, DOCX, PPTX, TXT, JPG, and PNG.
+        </p>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload"></i>
+                Upload Material
+            </button>
+
+            <button
+                type="button"
+                id="cancel-upload-material"
+                class="btn btn-outline"
+            >
+                Cancel
+            </button>
+        </div>
+    </form>
+</div>
 
 {% for material in subject.materials %}
 
@@ -394,4 +487,27 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/materials.js') }}"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toggleButton = document.getElementById("toggle-upload-material");
+    const cancelButton = document.getElementById("cancel-upload-material");
+    const uploadPanel = document.getElementById("upload-material-panel");
+
+    function showUploadPanel() {
+        uploadPanel.style.display = "block";
+        toggleButton.setAttribute("aria-expanded", "true");
+        toggleButton.style.display = "none";
+    }
+
+    function hideUploadPanel() {
+        uploadPanel.style.display = "none";
+        toggleButton.setAttribute("aria-expanded", "false");
+        toggleButton.style.display = "inline-flex";
+    }
+
+    toggleButton.addEventListener("click", showUploadPanel);
+    cancelButton.addEventListener("click", hideUploadPanel);
+});
+</script>
 {% endblock %}
