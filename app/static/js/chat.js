@@ -2,6 +2,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("chat-form");
     const input = document.getElementById("chat-input");
     const messagesEl = document.getElementById("chat-messages");
+    const sendBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const sendBtnDefaultHtml = sendBtn ? sendBtn.innerHTML : "";
+
+    function setSending(isSending) {
+        if (!sendBtn) return;
+        sendBtn.disabled = isSending;
+        sendBtn.innerHTML = isSending
+            ? '<i class="fas fa-spinner fa-spin"></i>'
+            : sendBtnDefaultHtml;
+    }
 
     const modeDescriptions = {
         study: "Study Mode only answers using your uploaded material and says so if it can't find something.",
@@ -34,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
         appendMessage("user", question);
         input.value = "";
         input.disabled = true;
+        setSending(true);
 
         const typingEl = appendTyping();
 
@@ -47,11 +58,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ question, mode }),
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseErr) {
+                throw new Error(`Unexpected response (status ${response.status})`);
+            }
+
             typingEl.remove();
 
-            if (data.error) {
-                appendMessage("assistant", `⚠️ ${data.error}`, null, mode);
+            if (!response.ok || data.error) {
+                appendMessage("assistant", `⚠️ ${data.error || "Something went wrong. Please try again."}`, null, mode);
             } else {
                 appendMessage("assistant", data.reply, data.sources, mode);
             }
@@ -60,7 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
             appendMessage("assistant", "⚠️ Something went wrong. Please try again.", null, mode);
             console.error("Chat request failed:", err);
         } finally {
+            // Always runs, even on network failure or a bad/non-JSON
+            // response, so the send button never gets stuck spinning.
             input.disabled = false;
+            setSending(false);
             input.focus();
         }
     });
