@@ -233,29 +233,52 @@
 
 
         <!-- Material Status -->
-        <span
-            id="status-{{ material.id }}"
-            class="badge
-                {% if material.status == 'ready' %}
-                    badge-success
-                {% elif material.status == 'processing' %}
-                    badge-warning
-                {% elif material.status == 'failed' %}
-                    badge-danger
-                {% else %}
-                    badge-info
-                {% endif %}
-            "
-            {% if material.status == "pending" %}
-                data-pending-material="{{ material.id }}"
-            {% endif %}
-            {% if material.status == "processing" %}
-                data-processing-material="{{ material.id }}"
-            {% endif %}
-        >
-            {{ material.status|capitalize }}
-        </span>
+       <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
 
+            <!-- Material Status -->
+            <span
+                id="status-{{ material.id }}"
+                class="badge
+                    {% if material.status == 'ready' %}
+                        badge-success
+                    {% elif material.status == 'processing' %}
+                        badge-warning
+                    {% elif material.status == 'failed' %}
+                        badge-danger
+                    {% else %}
+                        badge-info
+                    {% endif %}
+                "
+                {% if material.status == "pending" %}
+                    data-pending-material="{{ material.id }}"
+                {% endif %}
+                {% if material.status == "processing" %}
+                    data-processing-material="{{ material.id }}"
+                {% endif %}
+            >
+                {{ material.status|capitalize }}
+            </span>
+
+            <!-- Delete -->
+            <form
+                method="POST"
+                action="{{ url_for('materials.delete_material', material_id=material.id) }}"
+                class="delete-material-form"
+                style="display: inline;"
+            >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button
+                    type="submit"
+                    class="btn btn-outline delete-material-btn"
+                    title="Delete material"
+                    data-material-name="{{ material.original_name }}"
+                    style="padding: 6px 10px; font-size: 0.8rem; color: #dc3545; border-color: #dc3545;"
+                >
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+
+        </div>
     </div>
 
 
@@ -508,6 +531,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     toggleButton.addEventListener("click", showUploadPanel);
     cancelButton.addEventListener("click", hideUploadPanel);
+
+    document.querySelectorAll(".delete-material-form").forEach((form) => {
+        form.addEventListener("submit", function (e) {
+            const btn = form.querySelector(".delete-material-btn");
+            const name = btn ? btn.dataset.materialName : "this material";
+
+            if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) {
+                e.preventDefault();
+                return;
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+        });
+    });
 });
 </script>
 {% endblock %}
