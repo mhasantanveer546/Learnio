@@ -9,7 +9,7 @@ import numpy as np
 from app.ai.embeddings import embed_texts, embed_query
 from app.services.storage_service import upload_file_obj, download_to_temp, delete_file
 
-INDEX_DIMENSION = 768
+INDEX_DIMENSION = 3072
 
 
 def _index_key(material_id):
