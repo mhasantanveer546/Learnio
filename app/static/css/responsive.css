@@ -239,6 +239,13 @@ h1, h2, h3, h4, p, span, td, a, strong, small {
    ========================================================================== */
 
 /* Desktop and tablet (>767px): untouched — inline sizes render exactly as designed */
+.error-code {
+    font-size: clamp(3.5rem, 18vw, 6rem);
+}
+
+#timer-display {
+    font-size: clamp(2.75rem, 16vw, 5rem);
+}
 
 @media (max-width: 767px) {
     h1 {

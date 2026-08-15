@@ -249,6 +249,18 @@ tbody tr:hover {
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
 }
+.error-code {
+    font-weight: 800;
+    margin-bottom: 16px;
+}
+
+#timer-display {
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 24px;
+    font-variant-numeric: tabular-nums;
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .fade-in { animation: fadeIn 0.4s ease; }
