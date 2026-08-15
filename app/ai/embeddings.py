@@ -2,7 +2,7 @@ import numpy as np
 import google.generativeai as genai
 from flask import current_app
 
-_EMBED_MODEL = "models/text-embedding-004"
+_EMBED_MODEL = "models/gemini-embedding-001"
 
 
 def _ensure_configured():
