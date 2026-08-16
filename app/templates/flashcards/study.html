@@ -268,6 +268,7 @@ const counter = document.getElementById('card-counter');
 const progress = document.getElementById('study-progress');
 const percent = document.getElementById('progress-percent');
 const learnedCount = document.getElementById('learned-count');
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 function renderCard() {
 
@@ -316,7 +317,8 @@ async function markCard(isLearned, difficulty) {
             {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify({
                     is_learned: isLearned,
@@ -326,6 +328,7 @@ async function markCard(isLearned, difficulty) {
         );
 
         if (!response.ok) {
+            console.error('Failed to update flashcard:', response.status, await response.text());
             return;
         }
 
@@ -395,7 +398,6 @@ document.addEventListener('keydown', function(event) {
 
 renderCard();
 </script>
-
 {% endif %}
 
 {% endblock %}
