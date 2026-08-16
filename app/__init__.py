@@ -92,8 +92,13 @@ def create_app(config_name="development"):
     @app.before_request
     def update_last_seen():
         if current_user.is_authenticated:
-            current_user.last_seen_at = datetime.now(timezone.utc)
-            db.session.commit()
+            now = datetime.now(timezone.utc)
+            last_seen = current_user.last_seen_at
+            if last_seen is not None and last_seen.tzinfo is None:
+                last_seen = last_seen.replace(tzinfo=timezone.utc)
+            if last_seen is None or (now - last_seen).total_seconds() > 300:
+                current_user.last_seen_at = now
+                db.session.commit()
 
     @app.context_processor
     def inject_now():

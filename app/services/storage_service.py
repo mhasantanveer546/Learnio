@@ -1,18 +1,19 @@
 import boto3
 from botocore.client import Config
-from flask import current_app
+from flask import current_app, g
 
 
 def get_r2_client():
-    return boto3.client(
-        "s3",
-        endpoint_url=current_app.config["R2_ENDPOINT_URL"],
-        aws_access_key_id=current_app.config["R2_ACCESS_KEY_ID"],
-        aws_secret_access_key=current_app.config["R2_SECRET_ACCESS_KEY"],
-        config=Config(signature_version="s3v4"),
-        region_name="auto",
-    )
-
+    if "r2_client" not in g:
+        g.r2_client = boto3.client(
+            "s3",
+            endpoint_url=current_app.config["R2_ENDPOINT_URL"],
+            aws_access_key_id=current_app.config["R2_ACCESS_KEY_ID"],
+            aws_secret_access_key=current_app.config["R2_SECRET_ACCESS_KEY"],
+            config=Config(signature_version="s3v4"),
+            region_name="auto",
+        )
+    return g.r2_client
 
 def upload_file_obj(file_obj, storage_key):
     """Uploads a file-like object directly to R2 — no local disk
