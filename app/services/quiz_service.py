@@ -6,6 +6,34 @@ from app.ai.client import generate_content
 from app.ai.prompts import build_quiz_prompt
 
 
+def _validate_quiz_json(parsed):
+    """Defensive validation: don't trust AI output blindly."""
+    if not isinstance(parsed, dict):
+        raise ValueError(f"Expected JSON object, got {type(parsed).__name__}")
+
+    if "questions" not in parsed:
+        raise ValueError("Missing 'questions' key in quiz JSON")
+
+    if not isinstance(parsed["questions"], list):
+        raise ValueError(
+            f"Expected 'questions' to be a list, got {type(parsed['questions']).__name__}"
+        )
+
+    for i, q in enumerate(parsed["questions"]):
+        if not isinstance(q, dict):
+            raise ValueError(f"Question {i} is not an object")
+
+        required = ["type", "question", "correct_answer"]
+        missing = [key for key in required if key not in q]
+        if missing:
+            raise ValueError(f"Question {i} missing required keys: {missing}")
+
+        if q.get("type") == "mcq" and "options" not in q:
+            raise ValueError(f"Question {i} (mcq) missing 'options'")
+
+    return parsed
+
+
 def generate_quiz(material, num_questions, question_types, difficulty):
     """Generates a quiz from a material's extracted text. Creates the
     Quiz row immediately (status='processing'), then parses Gemini's
@@ -25,14 +53,21 @@ def generate_quiz(material, num_questions, question_types, difficulty):
     db.session.add(quiz)
     db.session.commit()
 
-    prompt = build_quiz_prompt(material.extracted_text, num_questions, question_types, difficulty)
+    prompt = build_quiz_prompt(
+        material.extracted_text, num_questions, question_types, difficulty
+    )
 
     try:
         raw_response = generate_content(prompt)
-        # Gemini sometimes wraps JSON in ```json fences despite instructions
-        # not to — strip them defensively rather than trust it blindly.
-        cleaned = raw_response.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        cleaned = (
+            raw_response.strip()
+            .removeprefix("```json")
+            .removeprefix("```")
+            .removesuffix("```")
+            .strip()
+        )
         parsed = json.loads(cleaned)
+        parsed = _validate_quiz_json(parsed)
 
         for index, q in enumerate(parsed["questions"]):
             question = QuizQuestion(
@@ -48,7 +83,7 @@ def generate_quiz(material, num_questions, question_types, difficulty):
         quiz.status = "ready"
         db.session.commit()
 
-    except (json.JSONDecodeError, KeyError, RuntimeError) as e:
+    except (json.JSONDecodeError, KeyError, ValueError, RuntimeError) as e:
         quiz.status = "failed"
         db.session.commit()
         raise RuntimeError(f"Quiz generation failed: {e}")
@@ -74,7 +109,9 @@ def submit_attempt(attempt, submitted_answers):
 
         is_correct = None
         if question.question_type in ("mcq", "true_false"):
-            is_correct = submitted.lower() == question.correct_answer.strip().lower()
+            is_correct = (
+                submitted.lower() == question.correct_answer.strip().lower()
+            )
             if is_correct:
                 score += 1
 
@@ -88,6 +125,7 @@ def submit_attempt(attempt, submitted_answers):
 
     attempt.score = score  # partial — short/long not yet counted
     from datetime import datetime, timezone
+
     attempt.completed_at = datetime.now(timezone.utc)
     db.session.commit()
     return attempt
