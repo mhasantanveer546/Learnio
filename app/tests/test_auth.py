@@ -11,7 +11,7 @@ def test_register_creates_user(client):
 
     # 302 = redirect to login, which is what a successful register does
     assert response.status_code == 302
-    assert response.location == "/auth/login" or "/auth/login" in response.location
+    assert "/auth/login" in (response.location or "")
 
     user = User.query.filter_by(email="newuser@example.com").first()
     assert user is not None

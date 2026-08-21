@@ -41,7 +41,9 @@ def create_subject():
 @subjects_bp.route("/<int:subject_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_subject(subject_id):
-    subject = Subject.query.get_or_404(subject_id)
+    subject = db.session.get(Subject, subject_id)
+    if subject is None:
+        abort(404)
 
     # Ownership check — the critical line. Without this, any logged-in
     # user could edit any other user's subject just by changing the ID
@@ -67,7 +69,9 @@ def edit_subject(subject_id):
 @subjects_bp.route("/<int:subject_id>/delete", methods=["POST"])
 @login_required
 def delete_subject(subject_id):
-    subject = Subject.query.get_or_404(subject_id)
+    subject = db.session.get(Subject, subject_id)
+    if subject is None:
+        abort(404)
 
     # Same ownership check as edit — delete is just as dangerous an
     # operation to leave unguarded, arguably more so.
@@ -82,7 +86,9 @@ def delete_subject(subject_id):
 @subjects_bp.route("/<int:subject_id>")
 @login_required
 def view_subject(subject_id):
-    subject = Subject.query.get_or_404(subject_id)
+    subject = db.session.get(Subject, subject_id)
+    if subject is None:
+        abort(404)
     if subject.user_id != current_user.id:
         abort(403)
 

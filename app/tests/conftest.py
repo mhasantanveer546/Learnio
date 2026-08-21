@@ -58,3 +58,15 @@ def make_material(app):
         db.session.commit()
         return material
     return _make_material
+
+@pytest.fixture
+def login_client(client):
+    """Returns a helper that logs a given user into the test client
+    and returns the client for subsequent requests."""
+    def _login(user, password="password123"):
+        client.post("/auth/login", data={
+            "email": user.email,
+            "password": password,
+        })
+        return client
+    return _login
