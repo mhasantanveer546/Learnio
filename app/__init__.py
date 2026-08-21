@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from flask import Flask, render_template, flash, redirect, url_for, request
 from flask_login import current_user
 from werkzeug.exceptions import RequestEntityTooLarge
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from app.config import config
 from app.extensions import db, migrate, login_manager, csrf, limiter
@@ -30,6 +32,18 @@ from datetime import datetime as dt
 from app.routes.main import main_bp
 
 def create_app(config_name="development"):
+    # Initialize Sentry BEFORE the app is created so it can catch
+    # startup errors too.
+    if config_name == "production":
+        sentry_dsn = os.environ.get("SENTRY_DSN")
+        if sentry_dsn:
+            sentry_sdk.init(
+                dsn=sentry_dsn,
+                integrations=[FlaskIntegration()],
+                traces_sample_rate=0.1,  # 10% of requests for performance tracing
+                profiles_sample_rate=0.1,
+            )
+
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 

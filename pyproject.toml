@@ -96,6 +96,7 @@ dependencies = [
     "Werkzeug==3.1.8",
     "WTForms==3.2.2",
     "flask-limiter>=4.1.1",
+    "sentry-sdk[flask]>=2.68.0",
 ]
 
 [tool.uv]
