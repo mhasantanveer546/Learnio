@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models import StudyMaterial, Quiz, QuizAttempt, QuizAnswer
 from app.services.quiz_service import generate_quiz, start_attempt, submit_attempt, self_grade_answer
 
@@ -16,6 +16,7 @@ def configure_quiz(material_id):
 
 
 @quizzes_bp.route("/<int:material_id>/generate", methods=["POST"])
+@limiter.limit("3 per minute")
 @login_required
 def generate_quiz_route(material_id):
     material = StudyMaterial.query.filter_by(id=material_id, user_id=current_user.id).first_or_404()

@@ -6,7 +6,7 @@ from flask_login import current_user
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from app.config import config
-from app.extensions import db, migrate, login_manager, csrf
+from app.extensions import db, migrate, login_manager, csrf, limiter
 from app.routes.dashboard import dashboard_bp
 from app.routes.auth import auth_bp
 from app.routes.profile import profile_bp
@@ -48,6 +48,7 @@ def create_app(config_name="development"):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
+    limiter.init_app(app)
 
        
     app.register_blueprint(main_bp)

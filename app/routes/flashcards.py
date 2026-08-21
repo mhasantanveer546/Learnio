@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, abort, current_app, request
 from flask_login import login_required, current_user
-
+from app.extensions import limiter
 from app.models import StudyMaterial, Flashcard
 from app.services.flashcard_service import generate_flashcards, mark_card
 
@@ -8,6 +8,7 @@ flashcards_bp = Blueprint("flashcards", __name__, url_prefix="/flashcards")
 
 
 @flashcards_bp.route("/<int:material_id>/generate", methods=["POST"])
+@limiter.limit("3 per minute")
 @login_required
 def generate_flashcards_route(material_id):
     """Same async pattern as summaries/quizzes: fetch() from the

@@ -2,7 +2,7 @@ import json
 
 from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required, current_user
-
+from app.extensions import limiter
 from app.models import StudyMaterial
 from app.services.chat_service import get_or_create_session, send_message
 
@@ -27,6 +27,7 @@ def view_chat(material_id):
 
 
 @chat_bp.route("/<int:material_id>/send", methods=["POST"])
+@limiter.limit("10 per minute")
 @login_required
 def send_message_route(material_id):
     material = StudyMaterial.query.filter_by(

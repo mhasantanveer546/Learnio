@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, abort, current_app
 from flask_login import login_required, current_user
-
+from app.extensions import limiter
 from app.models import StudyMaterial
 from app.services.summary_service import generate_summary
 
@@ -8,6 +8,7 @@ summaries_bp = Blueprint("summaries", __name__, url_prefix="/summaries")
 
 
 @summaries_bp.route("/<int:material_id>/generate", methods=["POST"])
+@limiter.limit("3 per minute")
 @login_required
 def generate_summary_route(material_id):
     """Triggers summary generation. Called via fetch() from the subject
