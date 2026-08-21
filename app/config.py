@@ -18,6 +18,10 @@ class Config:
         "pool_pre_ping": True,   # test each connection before using it; auto-reconnect if stale
         "pool_recycle": 280,     # recycle connections before Neon's own idle timeout kicks in
     }
+    # Session cookie security — explicit is better than implicit
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = False   # overridden in ProductionConfig
 
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
     TESSERACT_CMD = os.environ.get("TESSERACT_CMD")  # optional — only needed if tesseract isn't on system PATH
@@ -48,6 +52,7 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SECRET_KEY = os.environ.get("SECRET_KEY")
+    SESSION_COOKIE_SECURE = True   #<-- this added
 
     _database_url = os.environ.get("DATABASE_URL")
     if _database_url and _database_url.startswith("postgres://"):
