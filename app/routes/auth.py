@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timezone
 
-from app.extensions import db, limiter
+from app.extensions import db
 from app.forms.auth import LoginForm, RegisterForm
 from app.models import User
 
@@ -10,11 +10,7 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
-@limiter.limit("3 per minute")
 def register():
-    # If someone who's already logged in wanders back to /register,
-    # send them to the dashboard instead of letting them create a
-    # second account mid-session.
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.dashboard"))
 
@@ -27,17 +23,14 @@ def register():
         db.session.add(user)
         db.session.commit()
 
+        current_app.logger.info(f"New user registered: {user.email} (id={user.id})")
         flash("Account created successfully! Please log in.", "success")
         return redirect(url_for("auth.login"))
 
-    # GET request, or POST that failed validation — re-render the SAME
-    # form object so field-level errors (username taken, weak password,
-    # mismatched confirm) actually show up next to the offending field.
     return render_template("auth/register.html", form=form)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
-@limiter.limit("5 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.dashboard"))
@@ -49,6 +42,7 @@ def login():
 
         if user and user.check_password(form.password.data):
             if not user.is_active:
+                current_app.logger.warning(f"Suspended user login attempt: {form.email.data}")
                 flash("Your Learnio account has been suspended. Please contact an administrator.", "danger")
                 return render_template("auth/login.html", form=form)
 
@@ -56,6 +50,7 @@ def login():
             user.last_seen_at = datetime.now(timezone.utc)
             db.session.commit()
 
+            current_app.logger.info(f"User logged in: {user.email} (id={user.id})")
             next_page = request.args.get("next")
             if not next_page or not next_page.startswith("/"):
                 next_page = url_for("dashboard.dashboard")
@@ -63,9 +58,11 @@ def login():
             flash("Logged in successfully!", "success")
             return redirect(next_page)
 
+        current_app.logger.warning(f"Failed login attempt for email: {form.email.data}")
         flash("Invalid email or password.", "danger")
 
     return render_template("auth/login.html", form=form)
+
 
 @auth_bp.route("/logout")
 @login_required

@@ -64,9 +64,16 @@ def upload_material():
     try:
         saved_file = save_study_material(form.file.data, current_user.id)
     except ValueError as e:
+        # User error: wrong file type
+        current_app.logger.warning(f"Material upload rejected for user={current_user.id}: {e}")
         flash(str(e), "danger")
         return redirect(url_for("subjects.view_subject", subject_id=subject.id))
-
+    except Exception as e:
+        # System error: R2 down, missing config, network issue, etc.
+        current_app.logger.exception(f"Material upload failed for user={current_user.id}: {e}")
+        flash("Upload failed due to a server error. Please try again later.", "danger")
+        return redirect(url_for("subjects.view_subject", subject_id=subject.id))
+        
     material = StudyMaterial(
         storage_key=saved_file["storage_key"],
         original_name=secure_filename(form.file.data.filename),
@@ -78,6 +85,10 @@ def upload_material():
     db.session.add(material)
     db.session.commit()
 
+    current_app.logger.info(
+        f"Material uploaded: id={material.id} by user={current_user.id} "
+        f"filename={material.original_name}"
+    )
     flash("Study material uploaded successfully.", "success")
     return redirect(url_for("subjects.view_subject", subject_id=subject.id))
 
@@ -104,9 +115,6 @@ def process_material(material_id):
     material.status = "processing"
     db.session.commit()
 
-    # Download to a local temp file for processing only — this is
-    # scratch space, not permanent storage. Always cleaned up in the
-    # finally block, whether extraction succeeds or fails.
     temp_path = download_to_temp(material.storage_key, suffix=f".{material.file_type}")
 
     try:
@@ -162,5 +170,6 @@ def delete_material(material_id):
     db.session.delete(material)
     db.session.commit()
 
+    current_app.logger.info(f"Material deleted: id={material_id} by user={current_user.id}")
     flash("Study material deleted successfully.", "success")
     return redirect(url_for("subjects.view_subject", subject_id=subject_id))
