@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload
 
 from app.extensions import db
-from app.models import Subject
+from app.models import Subject, StudyMaterial
 from app.forms.subjects import SubjectForm
 from app.forms.materials import UploadMaterialForm
 
@@ -86,7 +87,11 @@ def delete_subject(subject_id):
 @subjects_bp.route("/<int:subject_id>")
 @login_required
 def view_subject(subject_id):
-    subject = db.session.get(Subject, subject_id)
+    subject = Subject.query.options(
+    joinedload(Subject.materials).joinedload(StudyMaterial.summary),
+    joinedload(Subject.materials).joinedload(StudyMaterial.flashcard_set),
+    ).filter_by(id=subject_id).first_or_404()
+
     if subject is None:
         abort(404)
     if subject.user_id != current_user.id:

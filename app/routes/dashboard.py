@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload
 
 from app.models import Subject, StudyMaterial, Assignment, StudySession
 from app.services.notification_service import generate_due_notifications
@@ -24,6 +25,7 @@ def dashboard():
             Assignment.status != "completed",
             Assignment.due_date >= now,
         )
+        .options(joinedload(Assignment.subject))
         .order_by(Assignment.due_date.asc())
         .limit(5)
         .all()
@@ -39,6 +41,7 @@ def dashboard():
 
     recent_materials = (
         StudyMaterial.query.filter_by(user_id=current_user.id)
+        .options(joinedload(StudyMaterial.subject))
         .order_by(StudyMaterial.created_at.desc())
         .limit(5)
         .all()

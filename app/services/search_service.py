@@ -1,5 +1,5 @@
 from app.models import Subject, StudyMaterial, Summary, Flashcard, FlashcardSet, Assignment, Exam
-
+from sqlalchemy.orm import joinedload
 
 def global_search(user_id, query, limit_per_type=10):
     """Searches across everything a user owns: Subjects, Materials,
@@ -26,7 +26,9 @@ def global_search(user_id, query, limit_per_type=10):
         StudyMaterial.query.filter(
             StudyMaterial.user_id == user_id,
             db_or(StudyMaterial.original_name.ilike(like_query), StudyMaterial.extracted_text.ilike(like_query)),
-        ).limit(limit_per_type).all()
+        )
+        .options(joinedload(StudyMaterial.subject))
+        .limit(limit_per_type).all()
     )
     results["materials"] = [
         {"title": m.original_name, "subtitle": m.subject.name, "url_kwargs": {"subject_id": m.subject_id}}
@@ -36,6 +38,7 @@ def global_search(user_id, query, limit_per_type=10):
     summaries = (
         Summary.query.join(StudyMaterial)
         .filter(StudyMaterial.user_id == user_id, Summary.content.ilike(like_query))
+        .options(joinedload(Summary.material))
         .limit(limit_per_type).all()
     )
     results["summaries"] = [
@@ -48,7 +51,9 @@ def global_search(user_id, query, limit_per_type=10):
         .filter(
             StudyMaterial.user_id == user_id,
             db_or(Flashcard.front_text.ilike(like_query), Flashcard.back_text.ilike(like_query)),
-        ).limit(limit_per_type).all()
+        )
+        .options(joinedload(Flashcard.flashcard_set).joinedload(FlashcardSet.material))
+        .limit(limit_per_type).all()
     )
     results["flashcards"] = [
         {
@@ -63,7 +68,9 @@ def global_search(user_id, query, limit_per_type=10):
         Assignment.query.filter(
             Assignment.user_id == user_id,
             db_or(Assignment.title.ilike(like_query), Assignment.description.ilike(like_query)),
-        ).limit(limit_per_type).all()
+        )
+        .options(joinedload(Assignment.subject))
+        .limit(limit_per_type).all()
     )
     results["assignments"] = [
         {"title": a.title, "subtitle": a.subject.name, "url_kwargs": {}} for a in assignments
@@ -73,7 +80,9 @@ def global_search(user_id, query, limit_per_type=10):
         Exam.query.filter(
             Exam.user_id == user_id,
             db_or(Exam.title.ilike(like_query), Exam.notes.ilike(like_query), Exam.location.ilike(like_query)),
-        ).limit(limit_per_type).all()
+        )
+        .options(joinedload(Exam.subject))
+        .limit(limit_per_type).all()
     )
     results["exams"] = [
         {"title": e.title, "subtitle": e.subject.name, "url_kwargs": {}} for e in exams
