@@ -249,3 +249,6 @@ exports/*
 # Backup files
 backups/*
 !backups/.gitkeep
+.vercel
+.env*
+.vercel/

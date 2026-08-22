@@ -5,6 +5,8 @@ Learnio is a production-grade, AI-powered study assistant designed for universit
 
 Live Demo: https://learnio-xi.vercel.app
 
+![CI](https://github.com/mhasantanveer546/Learnio/actions/workflows/ci.yml/badge.svg)
+
 ## Table of Contents
 - [Overview](#overview)
 - [Key Features](#key-features)
