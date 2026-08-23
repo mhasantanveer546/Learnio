@@ -3,7 +3,7 @@ import pytest
 from app.services.quiz_service import generate_quiz
 from app.services.flashcard_service import generate_flashcards
 from app.services.summary_service import generate_summary
-from app.models import Quiz
+from app.models import Quiz, FlashcardSet
 from app.extensions import db
 
 
@@ -11,6 +11,16 @@ def test_generate_quiz_creates_questions(make_user, make_material, monkeypatch):
     owner = make_user()
     material = make_material(owner=owner, status="ready")
     material.extracted_text = "Sample text about math."
+    db.session.commit()
+
+    # The route creates the quiz row with status='processing' before
+    # starting the background task. The service updates this existing row.
+    quiz = Quiz(
+        material_id=material.id,
+        title="Quiz — test",
+        status="processing",
+    )
+    db.session.add(quiz)
     db.session.commit()
 
     fake_response = json.dumps({
@@ -29,7 +39,14 @@ def test_generate_quiz_creates_questions(make_user, make_material, monkeypatch):
 
     monkeypatch.setattr("app.services.quiz_service.generate_content", mock_generate_content)
 
-    quiz = generate_quiz(material, num_questions=1, question_types=["mcq"], difficulty="easy")
+    # Pass scalar IDs — same as the route now does
+    quiz = generate_quiz(
+        quiz_id=quiz.id,
+        material_id=material.id,
+        num_questions=1,
+        question_types=["mcq"],
+        difficulty="easy",
+    )
 
     assert quiz.status == "ready"
     assert len(quiz.questions) == 1
@@ -43,16 +60,30 @@ def test_generate_quiz_handles_invalid_json(make_user, make_material, monkeypatc
     material.extracted_text = "Sample text."
     db.session.commit()
 
+    quiz = Quiz(
+        material_id=material.id,
+        title="Quiz — test",
+        status="processing",
+    )
+    db.session.add(quiz)
+    db.session.commit()
+
     def mock_generate_content(prompt):
         return "not valid json"
 
     monkeypatch.setattr("app.services.quiz_service.generate_content", mock_generate_content)
 
     with pytest.raises(RuntimeError):
-        generate_quiz(material, num_questions=1, question_types=["mcq"], difficulty="easy")
+        generate_quiz(
+            quiz_id=quiz.id,
+            material_id=material.id,
+            num_questions=1,
+            question_types=["mcq"],
+            difficulty="easy",
+        )
 
-    quiz = Quiz.query.filter_by(material_id=material.id).first()
-    assert quiz is not None
+    # Refresh from DB — the service committed the failed status
+    db.session.refresh(quiz)
     assert quiz.status == "failed"
 
 
@@ -73,7 +104,8 @@ def test_generate_flashcards_creates_cards(make_user, make_material, monkeypatch
 
     monkeypatch.setattr("app.services.flashcard_service.generate_content", mock_generate_content)
 
-    flashcard_set = generate_flashcards(material, num_cards=1)
+    # Pass scalar ID — same as the route now does
+    flashcard_set = generate_flashcards(material_id=material.id, num_cards=1)
 
     assert flashcard_set.status == "ready"
     assert len(flashcard_set.cards) == 1
@@ -92,7 +124,8 @@ def test_generate_summary_creates_summary(make_user, make_material, monkeypatch)
 
     monkeypatch.setattr("app.services.summary_service.generate_content", mock_generate_content)
 
-    summary = generate_summary(material)
+    # Pass scalar ID — same as the route now does
+    summary = generate_summary(material_id=material.id)
 
     assert summary.status == "ready"
     assert summary.content == "This is a generated summary."
