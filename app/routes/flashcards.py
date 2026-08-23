@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.extensions import limiter
 from app.models import StudyMaterial, Flashcard
 from app.services.flashcard_service import generate_flashcards, mark_card
+from app.services.background_ai import run_background_task
 
 flashcards_bp = Blueprint("flashcards", __name__, url_prefix="/flashcards")
 
@@ -11,40 +12,40 @@ flashcards_bp = Blueprint("flashcards", __name__, url_prefix="/flashcards")
 @limiter.limit("3 per minute")
 @login_required
 def generate_flashcards_route(material_id):
-    """Same async pattern as summaries/quizzes: fetch() from the
-    subject detail page, returns JSON, no redirect."""
     material = StudyMaterial.query.filter_by(
         id=material_id, user_id=current_user.id
     ).first_or_404()
 
-    if material.status != "ready":
-        return jsonify({
-            "error": "This material's text hasn't finished processing yet."
-        }), 400
+    if not material.extracted_text:
+        flash("This material has no extracted text yet.", "warning")
+        return redirect(url_for("flashcards.study", material_id=material_id))
 
-    try:
-        flashcard_set = generate_flashcards(material)
-        return jsonify({"status": flashcard_set.status})
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except RuntimeError as e:
-        current_app.logger.warning(f"Flashcard generation failed for material {material_id}: {e}")
-        return jsonify({"status": "failed"}), 500
+    existing = FlashcardSet.query.filter_by(material_id=material_id).first()
+    if existing:
+        for card in list(existing.cards):
+            db.session.delete(card)
+        db.session.delete(existing)
+        db.session.commit()
+
+    flashcard_set = FlashcardSet(material_id=material_id, status="processing")
+    db.session.add(flashcard_set)
+    db.session.commit()
+
+    num_cards = request.form.get("num_cards", 15, type=int)
+
+    run_background_task(generate_flashcards, material=material, num_cards=num_cards)
+
+    flash("Flashcard generation started!", "info")
+    return redirect(url_for("flashcards.study", material_id=material_id))
 
 
-@flashcards_bp.route("/<int:material_id>/status", methods=["GET"])
+@flashcards_bp.route("/<int:material_id>/status")
 @login_required
 def flashcard_status(material_id):
-    """Polled by the frontend while a set is 'processing'."""
-    material = StudyMaterial.query.filter_by(
-        id=material_id, user_id=current_user.id
-    ).first_or_404()
-
-    if not material.flashcard_set:
-        return jsonify({"status": "pending"})
-
-    return jsonify({"status": material.flashcard_set.status})
-
+    flashcard_set = FlashcardSet.query.filter_by(material_id=material_id).first_or_404()
+    if flashcard_set.material.user_id != current_user.id:
+        abort(403)
+    return jsonify({"status": flashcard_set.status})
 
 @flashcards_bp.route("/<int:material_id>", methods=["GET"])
 @login_required
@@ -86,3 +87,4 @@ def mark_card_route(card_id):
         "learned_count": card.flashcard_set.learned_count,
         "total": len(card.flashcard_set.cards),
     })
+
