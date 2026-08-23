@@ -38,3 +38,4 @@ def generate_summary(material_id):
 
     db.session.commit()
     return summary
+    

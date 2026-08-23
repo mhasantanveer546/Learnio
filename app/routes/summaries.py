@@ -54,3 +54,4 @@ def view_summary(material_id):
     ).first_or_404()
 
     return render_template("materials/summary.html", material=material, summary=material.summary)
+    

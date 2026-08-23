@@ -95,3 +95,5 @@ def mark_card(card, is_learned=None, difficulty=None):
 
     db.session.commit()
     return card
+
+    

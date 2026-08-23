@@ -141,3 +141,4 @@ def self_grade_answer(answer, is_correct):
     attempt.score = sum(1 for a in attempt.answers if a.is_correct)
     db.session.commit()
     return attempt
+    

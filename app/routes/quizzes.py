@@ -170,3 +170,4 @@ def quiz_status(quiz_id):
     if quiz.material.user_id != current_user.id:
         abort(403)
     return jsonify({"status": quiz.status})
+    

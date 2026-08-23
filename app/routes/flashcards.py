@@ -85,3 +85,4 @@ def mark_card_route(card_id):
         "learned_count": card.flashcard_set.learned_count,
         "total": len(card.flashcard_set.cards),
     })
+    
