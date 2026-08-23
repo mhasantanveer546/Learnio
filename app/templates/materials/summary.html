@@ -7,30 +7,92 @@
     <p style="color: var(--text-muted);">Generated from: {{ material.original_name }}</p>
 </div>
 
-<div class="grid-stack-tablet" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">Summary</div>
-            <span class="badge badge-primary">{{ material.subject.name }}</span>
+{% if summary %}
+    {% if summary.status == "processing" %}
+        <div class="card" style="text-align: center; padding: 60px 20px;">
+            <div id="summary-status" data-material-id="{{ material.id }}">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 18px; display: block;"></i>
+                <h3>Generating summary...</h3>
+                <p style="color: var(--text-muted); margin-top: 6px;">
+                    This may take 10–30 seconds. The page will update automatically.
+                </p>
+            </div>
         </div>
-        <div id="summary-content" style="line-height: 1.7; min-height: 200px;"></div>
-    </div>
+        <script>
+        (function() {
+            const materialId = document.getElementById('summary-status').dataset.materialId;
+            function poll() {
+                fetch(`/summaries/${materialId}/status`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status !== 'processing') {
+                            location.reload();
+                        } else {
+                            setTimeout(poll, 2000);
+                        }
+                    })
+                    .catch(() => setTimeout(poll, 5000));
+            }
+            setTimeout(poll, 2000);
+        })();
+        </script>
+    {% elif summary.status == "failed" %}
+        <div class="card" style="text-align: center; padding: 60px 20px;">
+            <i class="fas fa-exclamation-circle" style="font-size: 2.5rem; color: var(--danger); margin-bottom: 18px; display: block;"></i>
+            <h3>Summary generation failed.</h3>
+            <p style="color: var(--text-muted); margin-top: 6px; margin-bottom: 20px;">
+                Something went wrong while generating your summary. You can try again below.
+            </p>
+            <form method="POST" action="{{ url_for('summaries.generate_summary_route', material_id=material.id) }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </form>
+        </div>
+    {% elif summary.status == "ready" %}
+        <div class="grid-stack-tablet" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Summary</div>
+                    <span class="badge badge-primary">{{ material.subject.name }}</span>
+                </div>
+                <div id="summary-content" style="line-height: 1.7; min-height: 200px;"></div>
+            </div>
 
-    <div class="card">
-        <div class="card-title">Actions</div>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-download"></i> Download Original</a>
-            <a href="{{ url_for('chat.view_chat', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-robot"></i> Discuss with AI Chat</a>
-            <a href="{{ url_for('quizzes.configure_quiz', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-question-circle"></i> Generate Quiz</a>
-            <a href="{{ url_for('exports.export_summary', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-file-pdf"></i> Export PDF</a>
+            <div class="card">
+                <div class="card-title">Actions</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <a href="{{ url_for('materials.download_material', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-download"></i> Download Original</a>
+                    <a href="{{ url_for('chat.view_chat', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-robot"></i> Discuss with AI Chat</a>
+                    <a href="{{ url_for('quizzes.configure_quiz', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-question-circle"></i> Generate Quiz</a>
+                    <a href="{{ url_for('exports.export_summary', material_id=material.id) }}" class="btn btn-outline" style="justify-content: flex-start;"><i class="fas fa-file-pdf"></i> Export PDF</a>
+                </div>
+            </div>
         </div>
+    {% endif %}
+{% else %}
+    <div class="card" style="text-align: center; padding: 60px 20px;">
+        <i class="fas fa-file-alt" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 18px; display: block;"></i>
+        <h3>No summary yet</h3>
+        <p style="color: var(--text-muted); margin-top: 6px; margin-bottom: 20px;">
+            Generate an AI summary from this material to get started.
+        </p>
+        <form method="POST" action="{{ url_for('summaries.generate_summary_route', material_id=material.id) }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-magic"></i> Generate Summary
+            </button>
+        </form>
     </div>
-</div>
+{% endif %}
 {% endblock %}
 {% block extra_js %}
+{% if summary and summary.status == "ready" %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
     const rawMarkdown = {{ summary.content | tojson }};
     document.getElementById("summary-content").innerHTML = marked.parse(rawMarkdown);
 </script>
+{% endif %}
 {% endblock %}

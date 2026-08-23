@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, jsonify, abort, current_app, request
+from flask import Blueprint, render_template, jsonify, abort, current_app, request, flash
 from flask_login import login_required, current_user
-from app.extensions import limiter
-from app.models import StudyMaterial, Flashcard
+from app.extensions import limiter, db
+from app.models import StudyMaterial, Flashcard, FlashcardSet
 from app.services.flashcard_service import generate_flashcards, mark_card
 from app.services.background_ai import run_background_task
 
@@ -18,7 +18,7 @@ def generate_flashcards_route(material_id):
 
     if not material.extracted_text:
         flash("This material has no extracted text yet.", "warning")
-        return redirect(url_for("flashcards.study", material_id=material_id))
+        return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
 
     existing = FlashcardSet.query.filter_by(material_id=material_id).first()
     if existing:
@@ -36,7 +36,7 @@ def generate_flashcards_route(material_id):
     run_background_task(generate_flashcards, material=material, num_cards=num_cards)
 
     flash("Flashcard generation started!", "info")
-    return redirect(url_for("flashcards.study", material_id=material_id))
+    return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
 
 
 @flashcards_bp.route("/<int:material_id>/status")
@@ -47,17 +47,14 @@ def flashcard_status(material_id):
         abort(403)
     return jsonify({"status": flashcard_set.status})
 
+
 @flashcards_bp.route("/<int:material_id>", methods=["GET"])
 @login_required
 def study_flashcards(material_id):
-    """Renders the flip-card study view — only reachable once
-    generation has actually completed."""
+    """Renders the study view for any status — polling handles processing/failed."""
     material = StudyMaterial.query.filter_by(
         id=material_id, user_id=current_user.id
     ).first_or_404()
-
-    if not material.flashcard_set or material.flashcard_set.status != "ready":
-        abort(404)
 
     return render_template(
         "flashcards/study.html", material=material, flashcard_set=material.flashcard_set
@@ -87,4 +84,3 @@ def mark_card_route(card_id):
         "learned_count": card.flashcard_set.learned_count,
         "total": len(card.flashcard_set.cards),
     })
-

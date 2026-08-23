@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, jsonify, abort, current_app
+from flask import Blueprint, render_template, jsonify, abort, current_app, flash
 from flask_login import login_required, current_user
-from app.extensions import limiter
-from app.models import StudyMaterial
+from app.extensions import limiter, db
+from app.models import StudyMaterial, Summary
 from app.services.summary_service import generate_summary
 from app.services.background_ai import run_background_task
 
@@ -34,6 +34,7 @@ def generate_summary_route(material_id):
     flash("Summary generation started!", "info")
     return redirect(url_for("summaries.view_summary", material_id=material_id))
 
+
 @summaries_bp.route("/<int:material_id>/status")
 @login_required
 def summary_status(material_id):
@@ -46,13 +47,9 @@ def summary_status(material_id):
 @summaries_bp.route("/<int:material_id>", methods=["GET"])
 @login_required
 def view_summary(material_id):
-    """Renders the summary page — only reachable once generation has
-    actually completed."""
+    """Renders the summary page for any status — polling handles processing/failed."""
     material = StudyMaterial.query.filter_by(
         id=material_id, user_id=current_user.id
     ).first_or_404()
-
-    if not material.summary or material.summary.status != "ready":
-        abort(404)
 
     return render_template("materials/summary.html", material=material, summary=material.summary)

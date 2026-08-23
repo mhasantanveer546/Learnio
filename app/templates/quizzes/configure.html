@@ -42,6 +42,66 @@
     </div>
 </div>
 
+{% if quiz %}
+<div class="card" style="margin-bottom: 24px;">
+    {% if quiz.status == "processing" %}
+        <div id="quiz-status" data-quiz-id="{{ quiz.id }}" style="text-align: center; padding: 24px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary); margin-bottom: 12px; display: block;"></i>
+            <strong style="font-size: 1.1rem;">Generating quiz...</strong>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 6px;">
+                This may take 10–30 seconds. The page will update automatically.
+            </p>
+        </div>
+        <script>
+        (function() {
+            const statusDiv = document.getElementById('quiz-status');
+            const quizId = statusDiv.dataset.quizId;
+            
+            function poll() {
+                fetch(`/quizzes/${quizId}/status`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'ready' || data.status === 'failed') {
+                            location.reload();
+                        } else {
+                            setTimeout(poll, 2000);
+                        }
+                    })
+                    .catch(() => setTimeout(poll, 5000));
+            }
+            
+            setTimeout(poll, 2000);
+        })();
+        </script>
+    {% elif quiz.status == "ready" %}
+        <div style="text-align: center; padding: 24px;">
+            <i class="fas fa-check-circle" style="font-size: 1.5rem; color: var(--success); margin-bottom: 12px; display: block;"></i>
+            <strong style="font-size: 1.1rem;">Quiz ready!</strong>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 8px 0 16px;">
+                Your quiz has been generated successfully.
+            </p>
+            <a href="{{ url_for('quizzes.take_quiz', quiz_id=quiz.id) }}" class="btn btn-primary">
+                <i class="fas fa-play"></i> Start Quiz
+            </a>
+        </div>
+    {% elif quiz.status == "failed" %}
+        <div style="text-align: center; padding: 24px;">
+            <i class="fas fa-exclamation-circle" style="font-size: 1.5rem; color: var(--danger); margin-bottom: 12px; display: block;"></i>
+            <strong style="font-size: 1.1rem;">Quiz generation failed.</strong>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 8px 0 16px;">
+                Something went wrong while generating your quiz. You can retry below.
+            </p>
+            <form method="POST" action="{{ url_for('quizzes.generate_quiz_route', material_id=material.id) }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </form>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="card">
 
     <form method="POST"

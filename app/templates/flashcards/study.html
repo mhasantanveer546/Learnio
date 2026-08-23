@@ -34,6 +34,7 @@
             </p>
         </div>
 
+        {% if flashcard_set and flashcard_set.status == "ready" %}
         <div style="
             padding: 10px 14px;
             background: var(--bg-body);
@@ -47,193 +48,251 @@
             {{ flashcard_set.cards|length }}
             learned
         </div>
+        {% endif %}
 
     </div>
 
 </div>
 
-{% if flashcard_set.cards %}
-
-<div style="margin-bottom: 18px;">
-
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        color: var(--text-muted);
-        font-size: 0.82rem;
-        margin-bottom: 7px;
-    ">
-        <span id="card-counter">Card 1 of {{ flashcard_set.cards|length }}</span>
-        <span id="progress-percent">0%</span>
-    </div>
-
-    <div class="progress-bar">
-        <div id="study-progress"
-             class="progress-fill"
-             style="width: 0%; transition: width 0.3s ease;">
+{% if flashcard_set %}
+    {% if flashcard_set.status == "processing" %}
+        <div class="card" style="text-align: center; padding: 60px 20px;">
+            <div id="flashcard-status" data-material-id="{{ material.id }}">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 18px; display: block;"></i>
+                <h3>Generating flashcards...</h3>
+                <p style="color: var(--text-muted); margin-top: 6px;">
+                    This may take 10–30 seconds. The page will update automatically.
+                </p>
+            </div>
         </div>
-    </div>
+        <script>
+        (function() {
+            const materialId = document.getElementById('flashcard-status').dataset.materialId;
+            function poll() {
+                fetch(`/flashcards/${materialId}/status`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status !== 'processing') {
+                            location.reload();
+                        } else {
+                            setTimeout(poll, 2000);
+                        }
+                    })
+                    .catch(() => setTimeout(poll, 5000));
+            }
+            setTimeout(poll, 2000);
+        })();
+        </script>
+    {% elif flashcard_set.status == "failed" %}
+        <div class="card" style="text-align: center; padding: 60px 20px;">
+            <i class="fas fa-exclamation-circle" style="font-size: 2.5rem; color: var(--danger); margin-bottom: 18px; display: block;"></i>
+            <h3>Flashcard generation failed.</h3>
+            <p style="color: var(--text-muted); margin-top: 6px; margin-bottom: 20px;">
+                Something went wrong. You can try again below.
+            </p>
+            <form method="POST" action="{{ url_for('flashcards.generate_flashcards_route', material_id=material.id) }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="num_cards" value="15">
+                <button type="submit" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </form>
+        </div>
+    {% elif flashcard_set.status == "ready" %}
+        {% if flashcard_set.cards %}
 
-</div>
+        <div style="margin-bottom: 18px;">
 
-<div id="flashcard"
-     style="
-         min-height: 360px;
-         perspective: 1000px;
-         cursor: pointer;
-         margin-bottom: 22px;
-     ">
-
-    <div id="flashcard-inner"
-         style="
-             position: relative;
-             width: 100%;
-             min-height: 360px;
-             transition: transform 0.55s ease;
-             transform-style: preserve-3d;
-         ">
-
-        <div style="
-            position: absolute;
-            inset: 0;
-            backface-visibility: hidden;
-            background: var(--bg-card, white);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            padding: 36px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-         ">
-
-            <span class="badge badge-primary" style="margin-bottom: 20px;">
-                Question
-            </span>
-
-            <h2 id="card-front"
-                style="
-                    font-size: 1.45rem;
-                    line-height: 1.6;
-                    max-width: 650px;
-                ">
-            </h2>
-
-            <p style="
+            <div style="
+                display: flex;
+                justify-content: space-between;
                 color: var(--text-muted);
                 font-size: 0.82rem;
-                margin-top: 28px;
+                margin-bottom: 7px;
             ">
-                <i class="fas fa-hand-pointer"></i>
-                Click the card to reveal the answer
-            </p>
+                <span id="card-counter">Card 1 of {{ flashcard_set.cards|length }}</span>
+                <span id="progress-percent">0%</span>
+            </div>
+
+            <div class="progress-bar">
+                <div id="study-progress"
+                     class="progress-fill"
+                     style="width: 0%; transition: width 0.3s ease;">
+                </div>
+            </div>
+
+        </div>
+
+        <div id="flashcard"
+             style="
+                 min-height: 360px;
+                 perspective: 1000px;
+                 cursor: pointer;
+                 margin-bottom: 22px;
+             ">
+
+            <div id="flashcard-inner"
+                 style="
+                     position: relative;
+                     width: 100%;
+                     min-height: 360px;
+                     transition: transform 0.55s ease;
+                     transform-style: preserve-3d;
+                 ">
+
+                <div style="
+                    position: absolute;
+                    inset: 0;
+                    backface-visibility: hidden;
+                    background: var(--bg-card, white);
+                    border: 1px solid var(--border-color);
+                    border-radius: 18px;
+                    padding: 36px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+                 ">
+
+                    <span class="badge badge-primary" style="margin-bottom: 20px;">
+                        Question
+                    </span>
+
+                    <h2 id="card-front"
+                        style="
+                            font-size: 1.45rem;
+                            line-height: 1.6;
+                            max-width: 650px;
+                        ">
+                    </h2>
+
+                    <p style="
+                        color: var(--text-muted);
+                        font-size: 0.82rem;
+                        margin-top: 28px;
+                    ">
+                        <i class="fas fa-hand-pointer"></i>
+                        Click the card to reveal the answer
+                    </p>
+
+                </div>
+
+                <div style="
+                    position: absolute;
+                    inset: 0;
+                    backface-visibility: hidden;
+                    transform: rotateY(180deg);
+                    background: var(--primary);
+                    color: white;
+                    border-radius: 18px;
+                    padding: 36px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+                ">
+
+                    <span style="
+                        background: rgba(255,255,255,0.18);
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        font-size: 0.75rem;
+                        margin-bottom: 20px;
+                    ">
+                        Answer
+                    </span>
+
+                    <p id="card-back"
+                       style="
+                           font-size: 1.15rem;
+                           line-height: 1.7;
+                           max-width: 650px;
+                       ">
+                    </p>
+
+                </div>
+
+            </div>
 
         </div>
 
         <div style="
-            position: absolute;
-            inset: 0;
-            backface-visibility: hidden;
-            transform: rotateY(180deg);
-            background: var(--primary);
-            color: white;
-            border-radius: 18px;
-            padding: 36px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            gap: 10px;
+            margin-bottom: 22px;
         ">
 
-            <span style="
-                background: rgba(255,255,255,0.18);
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-size: 0.75rem;
-                margin-bottom: 20px;
-            ">
-                Answer
-            </span>
+            <button type="button"
+                    id="again-btn"
+                    class="btn btn-outline">
+                <i class="fas fa-redo"></i>
+                Need Practice
+            </button>
 
-            <p id="card-back"
-               style="
-                   font-size: 1.15rem;
-                   line-height: 1.7;
-                   max-width: 650px;
-               ">
-            </p>
+            <button type="button"
+                    id="easy-btn"
+                    class="btn btn-primary">
+                <i class="fas fa-check"></i>
+                I Know This
+            </button>
 
         </div>
 
-    </div>
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        ">
 
-</div>
+            <button type="button"
+                    id="previous-btn"
+                    class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Previous
+            </button>
 
-<div style="
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 22px;
-">
+            <button type="button"
+                    id="next-btn"
+                    class="btn btn-outline">
+                Next
+                <i class="fas fa-arrow-right"></i>
+            </button>
 
-    <button type="button"
-            id="again-btn"
-            class="btn btn-outline">
-        <i class="fas fa-redo"></i>
-        Need Practice
-    </button>
+        </div>
 
-    <button type="button"
-            id="easy-btn"
-            class="btn btn-primary">
-        <i class="fas fa-check"></i>
-        I Know This
-    </button>
-
-</div>
-
-<div style="
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-">
-
-    <button type="button"
-            id="previous-btn"
-            class="btn btn-outline">
-        <i class="fas fa-arrow-left"></i>
-        Previous
-    </button>
-
-    <button type="button"
-            id="next-btn"
-            class="btn btn-outline">
-        Next
-        <i class="fas fa-arrow-right"></i>
-    </button>
-
-</div>
-
+        {% else %}
+        <div class="card" style="text-align: center; padding: 60px 20px;">
+            <i class="fas fa-layer-group" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 18px; display: block;"></i>
+            <h3>No flashcards available</h3>
+            <p style="color: var(--text-muted); margin-top: 6px;">
+                This flashcard set was generated but contains no cards.
+            </p>
+        </div>
+        {% endif %}
+    {% endif %}
 {% else %}
-
-<div class="card"
-     style="text-align: center; padding: 60px 20px;">
-
-    <i class="fas fa-layer-group"
-       style="font-size: 2.5rem; color: var(--primary); margin-bottom: 18px;"></i>
-
-    <h3>No flashcards available</h3>
-
-    <p style="color: var(--text-muted); margin-top: 6px;">
-        This flashcard set does not contain any cards yet.
-    </p>
-
-</div>
-
+    <div class="card" style="text-align: center; padding: 60px 20px;">
+        <i class="fas fa-layer-group" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 18px; display: block;"></i>
+        <h3>No flashcards yet</h3>
+        <p style="color: var(--text-muted); margin-top: 6px; margin-bottom: 20px;">
+            Generate AI flashcards from this material to start studying.
+        </p>
+        <form method="POST" action="{{ url_for('flashcards.generate_flashcards_route', material_id=material.id) }}" style="display: inline-block;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group" style="max-width: 200px; margin: 0 auto 16px;">
+                <label class="form-label" for="num_cards">Number of cards</label>
+                <input type="number" id="num_cards" name="num_cards" class="form-control" value="15" min="5" max="50" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-magic"></i> Generate Flashcards
+            </button>
+        </form>
+    </div>
 {% endif %}
 
 
@@ -243,7 +302,7 @@
 
 {% block extra_js %}
 
-{% if flashcard_set.cards %}
+{% if flashcard_set and flashcard_set.status == "ready" and flashcard_set.cards %}
 
 <script>
 const cards = [
