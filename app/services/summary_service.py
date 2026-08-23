@@ -1,19 +1,17 @@
 from app.extensions import db
-from app.models import Summary
+from app.models import StudyMaterial, Summary
 from app.ai.client import generate_content
 from app.ai.prompts import build_summary_prompt
 
 
-def generate_summary(material):
+def generate_summary(material_id):
     """Generates (or regenerates) a structured summary for a StudyMaterial.
-    Reads from material.extracted_text — NEVER from a previous summary's
-    content — so regeneration always starts from the original source,
-    not from AI output feeding into more AI output.
+    Re-queries the material in the background thread's fresh session so
+    lazy loading works. Reads from material.extracted_text — NEVER from
+    a previous summary's content."""
 
-    Creates the Summary row if it doesn't exist yet; updates it in place
-    if it does (material_id is unique, so there's ever only one)."""
-
-    if not material.extracted_text:
+    material = db.session.get(StudyMaterial, material_id)
+    if material is None or not material.extracted_text:
         raise ValueError(
             "This material has no extracted text yet. Text extraction "
             "must complete before a summary can be generated."

@@ -29,7 +29,8 @@ def generate_summary_route(material_id):
     db.session.add(summary)
     db.session.commit()
 
-    run_background_task(generate_summary, material=material)
+    # Pass ID only — ORM objects are bound to the request session
+    run_background_task(generate_summary, material_id=material.id)
 
     flash("Summary generation started!", "info")
     return redirect(url_for("summaries.view_summary", material_id=material_id))

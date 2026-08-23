@@ -1,7 +1,7 @@
 import json
 
 from app.extensions import db
-from app.models import Quiz, QuizQuestion, QuizAttempt, QuizAnswer
+from app.models import StudyMaterial, Quiz, QuizQuestion, QuizAttempt, QuizAnswer
 from app.ai.client import generate_content
 from app.ai.prompts import build_quiz_prompt
 
@@ -34,23 +34,22 @@ def _validate_quiz_json(parsed):
     return parsed
 
 
-def generate_quiz(material, num_questions, question_types, difficulty):
-    """Generates a quiz from a material's extracted text. Creates the
-    Quiz row immediately (status='processing'), then parses Gemini's
-    JSON response into QuizQuestion rows. Raises ValueError if the
-    material has no extracted text, RuntimeError if generation/parsing
-    fails."""
+def generate_quiz(quiz_id, material_id, num_questions, question_types, difficulty):
+    """Generates quiz questions for an EXISTING quiz row (created by the
+    route with status='processing'). Re-queries quiz and material in the
+    background thread's fresh session so lazy loading works."""
 
-    if not material.extracted_text:
+    quiz = db.session.get(Quiz, quiz_id)
+    if quiz is None:
+        raise ValueError(f"Quiz {quiz_id} not found")
+
+    material = db.session.get(StudyMaterial, material_id)
+    if material is None or not material.extracted_text:
+        quiz.status = "failed"
+        db.session.commit()
         raise ValueError("This material has no extracted text yet.")
 
-    quiz = Quiz(
-        material_id=material.id,
-        title=f"Quiz — {material.original_name}",
-        difficulty=difficulty,
-        status="processing",
-    )
-    db.session.add(quiz)
+    quiz.difficulty = difficulty
     db.session.commit()
 
     prompt = build_quiz_prompt(

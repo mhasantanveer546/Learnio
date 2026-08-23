@@ -61,9 +61,12 @@ def generate_quiz_route(material_id):
     difficulty = request.form.get("difficulty", "medium")
 
     # Start generation in background with captured parameters
+    # Pass IDs only — ORM objects are bound to the request session
+    # and become detached when that session closes.
     run_background_task(
         generate_quiz,
-        material=material,
+        quiz_id=quiz.id,
+        material_id=material.id,
         num_questions=num_questions,
         question_types=question_types,
         difficulty=difficulty,
@@ -71,6 +74,8 @@ def generate_quiz_route(material_id):
 
     flash("Quiz generation started! This may take a moment.", "info")
     return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
+
+
 @quizzes_bp.route("/<int:quiz_id>/take", methods=["GET"])
 @login_required
 def take_quiz(quiz_id):

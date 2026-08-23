@@ -33,7 +33,8 @@ def generate_flashcards_route(material_id):
 
     num_cards = request.form.get("num_cards", 15, type=int)
 
-    run_background_task(generate_flashcards, material=material, num_cards=num_cards)
+    # Pass ID only — ORM objects are bound to the request session
+    run_background_task(generate_flashcards, material_id=material.id, num_cards=num_cards)
 
     flash("Flashcard generation started!", "info")
     return redirect(url_for("flashcards.study_flashcards", material_id=material_id))

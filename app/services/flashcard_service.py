@@ -1,7 +1,7 @@
 import json
 
 from app.extensions import db
-from app.models import FlashcardSet, Flashcard
+from app.models import StudyMaterial, FlashcardSet, Flashcard
 from app.ai.client import generate_content
 from app.ai.prompts import build_flashcard_prompt
 
@@ -29,17 +29,13 @@ def _validate_flashcard_json(parsed):
     return parsed
 
 
-def generate_flashcards(material, num_cards=15):
+def generate_flashcards(material_id, num_cards=15):
     """Generates (or regenerates) a flashcard set from a material's
-    extracted text. Mirrors generate_quiz's structure exactly: create
-    the parent row as 'processing' first, call Gemini, parse JSON into
-    child rows, flip to 'ready' or 'failed'.
+    extracted text. Re-queries the material in the background thread's
+    fresh session so lazy loading works."""
 
-    Regeneration replaces all existing cards for this material rather
-    than appending — a material has exactly one flashcard set, same
-    one-per-material model as Summary."""
-
-    if not material.extracted_text:
+    material = db.session.get(StudyMaterial, material_id)
+    if material is None or not material.extracted_text:
         raise ValueError("This material has no extracted text yet.")
 
     flashcard_set = material.flashcard_set
