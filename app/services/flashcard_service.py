@@ -74,10 +74,11 @@ def generate_flashcards(material_id, num_cards=15):
         flashcard_set.status = "ready"
         db.session.commit()
 
-    except (json.JSONDecodeError, KeyError, ValueError, RuntimeError) as e:
+    except Exception as e:
+        db.session.rollback()
         flashcard_set.status = "failed"
         db.session.commit()
-        raise RuntimeError(f"Flashcard generation failed: {e}")
+        raise RuntimeError(f"Flashcard generation failed: {e}") from e
 
     return flashcard_set
 
@@ -95,5 +96,3 @@ def mark_card(card, is_learned=None, difficulty=None):
 
     db.session.commit()
     return card
-
-    

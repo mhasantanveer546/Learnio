@@ -82,10 +82,14 @@ def generate_quiz(quiz_id, material_id, num_questions, question_types, difficult
         quiz.status = "ready"
         db.session.commit()
 
-    except (json.JSONDecodeError, KeyError, ValueError, RuntimeError) as e:
+    except Exception as e:
+        # Catch ALL exceptions — not just JSON/Value/RuntimeError.
+        # Vercel may kill the thread, but if the code fails normally
+        # we MUST mark the row as failed so the user isn't stuck.
+        db.session.rollback()
         quiz.status = "failed"
         db.session.commit()
-        raise RuntimeError(f"Quiz generation failed: {e}")
+        raise RuntimeError(f"Quiz generation failed: {e}") from e
 
     return quiz
 
@@ -141,4 +145,3 @@ def self_grade_answer(answer, is_correct):
     attempt.score = sum(1 for a in attempt.answers if a.is_correct)
     db.session.commit()
     return attempt
-    

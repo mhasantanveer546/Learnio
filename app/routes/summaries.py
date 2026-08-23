@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from flask import Blueprint, render_template, jsonify, abort, current_app, flash, redirect, url_for
 from flask_login import login_required, current_user
 from app.extensions import limiter, db
@@ -42,6 +43,14 @@ def summary_status(material_id):
     summary = Summary.query.filter_by(material_id=material_id).first_or_404()
     if summary.material.user_id != current_user.id:
         abort(403)
+
+    # Stale processing detection
+    if summary.status == "processing":
+        elapsed = (datetime.now(timezone.utc) - summary.created_at).total_seconds()
+        if elapsed > 180:
+            summary.status = "failed"
+            db.session.commit()
+
     return jsonify({"status": summary.status})
 
 
@@ -54,4 +63,3 @@ def view_summary(material_id):
     ).first_or_404()
 
     return render_template("materials/summary.html", material=material, summary=material.summary)
-    

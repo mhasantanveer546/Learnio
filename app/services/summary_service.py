@@ -31,11 +31,15 @@ def generate_summary(material_id):
         content = generate_content(prompt)
         summary.content = content
         summary.status = "ready"
-    except RuntimeError:
+        db.session.commit()
+
+    except Exception as e:
+        # Previously only caught RuntimeError — any other exception
+        # (timeout, network, unexpected SDK error) left status stuck
+        # on 'processing' forever.
+        db.session.rollback()
         summary.status = "failed"
         db.session.commit()
-        raise  # let the route log the real error; service doesn't swallow it silently
+        raise RuntimeError(f"Summary generation failed: {e}") from e
 
-    db.session.commit()
     return summary
-    

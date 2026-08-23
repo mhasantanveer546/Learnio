@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, abort
 from flask_login import login_required, current_user
 
@@ -169,5 +170,14 @@ def quiz_status(quiz_id):
     # Verify ownership via material
     if quiz.material.user_id != current_user.id:
         abort(403)
+
+    # Stale processing detection: Vercel may kill background threads,
+    # leaving status stuck on "processing". After 3 minutes, assume
+    # the thread is dead and mark as failed so the user can retry.
+    if quiz.status == "processing":
+        elapsed = (datetime.now(timezone.utc) - quiz.created_at).total_seconds()
+        if elapsed > 180:
+            quiz.status = "failed"
+            db.session.commit()
+
     return jsonify({"status": quiz.status})
-    

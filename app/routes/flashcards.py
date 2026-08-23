@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from flask import Blueprint, render_template, jsonify, abort, current_app, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from app.extensions import limiter, db
@@ -46,6 +47,14 @@ def flashcard_status(material_id):
     flashcard_set = FlashcardSet.query.filter_by(material_id=material_id).first_or_404()
     if flashcard_set.material.user_id != current_user.id:
         abort(403)
+
+    # Stale processing detection
+    if flashcard_set.status == "processing":
+        elapsed = (datetime.now(timezone.utc) - flashcard_set.created_at).total_seconds()
+        if elapsed > 180:
+            flashcard_set.status = "failed"
+            db.session.commit()
+
     return jsonify({"status": flashcard_set.status})
 
 
@@ -85,4 +94,3 @@ def mark_card_route(card_id):
         "learned_count": card.flashcard_set.learned_count,
         "total": len(card.flashcard_set.cards),
     })
-    
