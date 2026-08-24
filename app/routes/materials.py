@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, flash, redirect, request, url_for, jso
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
-from app.extensions import db
+from app.extensions import db, limiter
 from app.forms.materials import UploadMaterialForm
 from app.models import Subject, StudyMaterial
 from app.services.upload_service import save_study_material
