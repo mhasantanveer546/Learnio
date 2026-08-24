@@ -4,6 +4,14 @@ from app.ai.client import generate_content
 from app.ai.prompts import build_summary_prompt
 
 
+def _refresh_connection():
+    """Discard stale session and connection pool. Only disposes on
+    PostgreSQL — SQLite in-memory would be destroyed by dispose()."""
+    db.session.remove()
+    if db.engine.url.drivername == "postgresql":
+        db.engine.dispose()
+
+
 def generate_summary(material_id):
     material = db.session.get(StudyMaterial, material_id)
     if material is None or not material.extracted_text:
@@ -27,15 +35,13 @@ def generate_summary(material_id):
         content = generate_content(prompt)
 
     except Exception as e:
-        db.session.remove()
-        db.engine.dispose()
+        _refresh_connection()
         summary = db.session.get(Summary, summary_id)
         summary.status = "failed"
         db.session.commit()
         raise RuntimeError(f"Summary generation failed: {e}") from e
 
-    db.session.remove()
-    db.engine.dispose()
+    _refresh_connection()
     summary = db.session.get(Summary, summary_id)
     summary.content = content
     summary.status = "ready"

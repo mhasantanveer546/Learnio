@@ -23,6 +23,14 @@ def _validate_flashcard_json(parsed):
     return parsed
 
 
+def _refresh_connection():
+    """Discard stale session and connection pool. Only disposes on
+    PostgreSQL — SQLite in-memory would be destroyed by dispose()."""
+    db.session.remove()
+    if db.engine.url.drivername == "postgresql":
+        db.engine.dispose()
+
+
 def generate_flashcards(material_id, num_cards=15):
     material = db.session.get(StudyMaterial, material_id)
     if material is None or not material.extracted_text:
@@ -55,15 +63,13 @@ def generate_flashcards(material_id, num_cards=15):
         cards_data = parsed["flashcards"]
 
     except Exception as e:
-        db.session.remove()
-        db.engine.dispose()
+        _refresh_connection()
         flashcard_set = db.session.get(FlashcardSet, set_id)
         flashcard_set.status = "failed"
         db.session.commit()
         raise RuntimeError(f"Flashcard generation failed: {e}") from e
 
-    db.session.remove()
-    db.engine.dispose()
+    _refresh_connection()
     flashcard_set = db.session.get(FlashcardSet, set_id)
     for index, c in enumerate(cards_data):
         card = Flashcard(

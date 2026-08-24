@@ -27,6 +27,16 @@ def _validate_quiz_json(parsed):
     return parsed
 
 
+def _refresh_connection():
+    """Discard stale session and connection pool. On PostgreSQL (Neon)
+    this prevents 'SSL connection closed unexpectedly' after long
+    Gemini API calls. On SQLite (tests) this is skipped because
+    dispose() would destroy the in-memory database."""
+    db.session.remove()
+    if db.engine.url.drivername == "postgresql":
+        db.engine.dispose()
+
+
 def generate_quiz(quiz_id, material_id, num_questions, question_types, difficulty):
     """Generates quiz questions. Re-queries quiz and material in the
     background thread's fresh session."""
@@ -62,17 +72,13 @@ def generate_quiz(quiz_id, material_id, num_questions, question_types, difficult
         questions_data = parsed["questions"]
 
     except Exception as e:
-        # FAILURE: dispose pool, get fresh connection, mark failed
-        db.session.remove()
-        db.engine.dispose()
+        _refresh_connection()
         quiz = db.session.get(Quiz, quiz_id)
         quiz.status = "failed"
         db.session.commit()
         raise RuntimeError(f"Quiz generation failed: {e}") from e
 
-    # SUCCESS: dispose pool, get fresh connection, write questions
-    db.session.remove()
-    db.engine.dispose()
+    _refresh_connection()
     quiz = db.session.get(Quiz, quiz_id)
     for index, q in enumerate(questions_data):
         question = QuizQuestion(
