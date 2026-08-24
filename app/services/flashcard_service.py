@@ -9,35 +9,25 @@ from app.ai.prompts import build_flashcard_prompt
 def _validate_flashcard_json(parsed):
     if not isinstance(parsed, dict):
         raise ValueError(f"Expected JSON object, got {type(parsed).__name__}")
-
     if "flashcards" not in parsed:
         raise ValueError("Missing 'flashcards' key")
-
     if not isinstance(parsed["flashcards"], list):
         raise ValueError(
             f"Expected 'flashcards' to be a list, got {type(parsed['flashcards']).__name__}"
         )
-
     for i, card in enumerate(parsed["flashcards"]):
         if not isinstance(card, dict):
             raise ValueError(f"Flashcard {i} is not an object")
-
         if "front" not in card or "back" not in card:
             raise ValueError(f"Flashcard {i} missing 'front' or 'back'")
-
     return parsed
 
 
 def generate_flashcards(material_id, num_cards=15):
-    """Generates flashcards with DB session refresh after Gemini call.
-    This prevents 'SSL connection closed' errors on Vercel, where the
-    DB connection goes stale during the long Gemini API call."""
-
     material = db.session.get(StudyMaterial, material_id)
     if material is None or not material.extracted_text:
         raise ValueError("This material has no extracted text yet.")
 
-    # Phase 1: Setup — create/update flashcard set, commit, capture ID
     flashcard_set = material.flashcard_set
     if flashcard_set is None:
         flashcard_set = FlashcardSet(material_id=material.id, status="processing")
@@ -49,10 +39,8 @@ def generate_flashcards(material_id, num_cards=15):
     db.session.commit()
 
     set_id = flashcard_set.id
-    extracted_text = material.extracted_text  # load into memory
-    prompt = build_flashcard_prompt(extracted_text, num_cards)
+    prompt = build_flashcard_prompt(material.extracted_text, num_cards)
 
-    # Phase 2: Call Gemini — NO DB connection held during this (it's idle)
     try:
         raw_response = generate_content(prompt)
         cleaned = (
@@ -67,15 +55,15 @@ def generate_flashcards(material_id, num_cards=15):
         cards_data = parsed["flashcards"]
 
     except Exception as e:
-        # Phase 3a: FAILURE — refresh session, mark failed, re-raise
         db.session.remove()
+        db.engine.dispose()
         flashcard_set = db.session.get(FlashcardSet, set_id)
         flashcard_set.status = "failed"
         db.session.commit()
         raise RuntimeError(f"Flashcard generation failed: {e}") from e
 
-    # Phase 3b: SUCCESS — refresh session, write cards, mark ready
     db.session.remove()
+    db.engine.dispose()
     flashcard_set = db.session.get(FlashcardSet, set_id)
     for index, c in enumerate(cards_data):
         card = Flashcard(
@@ -98,6 +86,5 @@ def mark_card(card, is_learned=None, difficulty=None):
         if difficulty not in ("new", "easy", "medium", "hard"):
             raise ValueError("Invalid difficulty value.")
         card.difficulty = difficulty
-
     db.session.commit()
     return card
