@@ -55,11 +55,14 @@ def generate_flashcards_route(material_id):
 
     num_cards = request.form.get("num_cards", 15, type=int)
 
-    run_background_task(generate_flashcards, material_id=material.id, num_cards=num_cards)
+    try:
+        generate_flashcards(material_id=material.id, num_cards=num_cards)
+        flash("Flashcards generated successfully!", "success")
+    except Exception as e:
+        current_app.logger.exception(f"Flashcard generation failed: {e}")
+        flash("Flashcard generation failed. Please try again.", "danger")
 
-    flash("Flashcard generation started!", "info")
     return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
-
 
 @flashcards_bp.route("/<int:material_id>/status")
 @login_required

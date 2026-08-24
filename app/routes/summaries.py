@@ -51,11 +51,15 @@ def generate_summary_route(material_id):
     db.session.add(summary)
     db.session.commit()
 
-    run_background_task(generate_summary, material_id=material.id)
+    # SYNCHRONOUS on Vercel — background threads are frozen after response
+    try:
+        generate_summary(material_id=material.id)
+        flash("Summary generated successfully!", "success")
+    except Exception as e:
+        current_app.logger.exception(f"Summary generation failed: {e}")
+        flash("Summary generation failed. Please try again.", "danger")
 
-    flash("Summary generation started!", "info")
     return redirect(url_for("summaries.view_summary", material_id=material_id))
-
 
 @summaries_bp.route("/<int:material_id>/status")
 @login_required

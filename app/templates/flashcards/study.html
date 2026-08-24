@@ -68,6 +68,7 @@
         <script>
         (function() {
             const materialId = document.getElementById('flashcard-status').dataset.materialId;
+            let pollInterval = 5000;
             function poll() {
                 fetch(`/flashcards/${materialId}/status`)
                     .then(r => r.json())
@@ -75,12 +76,12 @@
                         if (data.status !== 'processing') {
                             location.reload();
                         } else {
-                            setTimeout(poll, 2000);
+                            setTimeout(poll, pollInterval);
                         }
                     })
-                    .catch(() => setTimeout(poll, 5000));
+                    .catch(() => setTimeout(poll, 10000));
             }
-            setTimeout(poll, 2000);
+            setTimeout(poll, pollInterval);
         })();
         </script>
     {% elif flashcard_set.status == "failed" %}

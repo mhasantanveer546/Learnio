@@ -76,18 +76,20 @@ def generate_quiz_route(material_id):
     question_types = request.form.getlist("question_types") or ["mcq"]
     difficulty = request.form.get("difficulty", "medium")
 
-    run_background_task(
-        generate_quiz,
-        quiz_id=quiz.id,
-        material_id=material.id,
-        num_questions=num_questions,
-        question_types=question_types,
-        difficulty=difficulty,
-    )
+    try:
+        generate_quiz(
+            quiz_id=quiz.id,
+            material_id=material.id,
+            num_questions=num_questions,
+            question_types=question_types,
+            difficulty=difficulty,
+        )
+        flash("Quiz generated successfully!", "success")
+    except Exception as e:
+        current_app.logger.exception(f"Quiz generation failed: {e}")
+        flash("Quiz generation failed. Please try again.", "danger")
 
-    flash("Quiz generation started! This may take a moment.", "info")
     return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
-
 
 @quizzes_bp.route("/<int:quiz_id>/take", methods=["GET"])
 @login_required

@@ -12,8 +12,8 @@ def get_gemini_client():
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel("gemini-flash-latest")
-
+    # Use the stable model name
+    return genai.GenerativeModel("gemini-1.5-flash-latest")
 
 def _is_transient_error(exc):
     error_msg = str(exc).lower()
@@ -43,7 +43,7 @@ def _generate_with_timeout(model, prompt, timeout_seconds):
         raise
 
 
-def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
+def generate_content(prompt, max_retries=1, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
     """Single-entry point for Gemini. Zero retries on Vercel — one
     clean attempt. If it fails, the caller marks the job 'failed'."""
     model = get_gemini_client()
