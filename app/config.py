@@ -69,7 +69,7 @@ class TestingConfig(Config):
     RATELIMIT_ENABLED = False   # ← ADD THIS
 
 config = {
-    "development": "DevelopmentConfig",
-    "production": "ProductionConfig",
-    "testing": "TestingConfig",
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "testing": TestingConfig,
 }
