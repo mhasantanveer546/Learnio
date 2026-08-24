@@ -143,3 +143,15 @@ flask create-admin user@example.com
 flask seed-demo user@example.com
 ```
 Run either against Neon by pointing your local `DATABASE_URL` at the production database first.
+
+## Backup & Recovery
+
+### Automatic Backups (Neon)
+Neon automatically creates point-in-time backups. You can restore to any point 
+in the retention window (7 days free tier, 30 days paid) via the Neon dashboard:
+https://console.neon.tech
+
+### Manual Export
+To export your database locally:
+```bash
+pg_dump $DATABASE_URL &gt; learnio_backup_$(date +%Y%m%d).sql
