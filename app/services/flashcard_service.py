@@ -7,7 +7,6 @@ from app.ai.prompts import build_flashcard_prompt
 
 
 def _validate_flashcard_json(parsed):
-    """Defensive validation: don't trust AI output blindly."""
     if not isinstance(parsed, dict):
         raise ValueError(f"Expected JSON object, got {type(parsed).__name__}")
 
@@ -30,14 +29,15 @@ def _validate_flashcard_json(parsed):
 
 
 def generate_flashcards(material_id, num_cards=15):
-    """Generates (or regenerates) a flashcard set from a material's
-    extracted text. Re-queries the material in the background thread's
-    fresh session so lazy loading works."""
+    """Generates flashcards with DB session refresh after Gemini call.
+    This prevents 'SSL connection closed' errors on Vercel, where the
+    DB connection goes stale during the long Gemini API call."""
 
     material = db.session.get(StudyMaterial, material_id)
     if material is None or not material.extracted_text:
         raise ValueError("This material has no extracted text yet.")
 
+    # Phase 1: Setup — create/update flashcard set, commit, capture ID
     flashcard_set = material.flashcard_set
     if flashcard_set is None:
         flashcard_set = FlashcardSet(material_id=material.id, status="processing")
@@ -48,8 +48,11 @@ def generate_flashcards(material_id, num_cards=15):
             db.session.delete(card)
     db.session.commit()
 
-    prompt = build_flashcard_prompt(material.extracted_text, num_cards)
+    set_id = flashcard_set.id
+    extracted_text = material.extracted_text  # load into memory
+    prompt = build_flashcard_prompt(extracted_text, num_cards)
 
+    # Phase 2: Call Gemini — NO DB connection held during this (it's idle)
     try:
         raw_response = generate_content(prompt)
         cleaned = (
@@ -61,32 +64,34 @@ def generate_flashcards(material_id, num_cards=15):
         )
         parsed = json.loads(cleaned)
         parsed = _validate_flashcard_json(parsed)
-
-        for index, c in enumerate(parsed["flashcards"]):
-            card = Flashcard(
-                set_id=flashcard_set.id,
-                front_text=c["front"],
-                back_text=c["back"],
-                order_index=index,
-            )
-            db.session.add(card)
-
-        flashcard_set.status = "ready"
-        db.session.commit()
+        cards_data = parsed["flashcards"]
 
     except Exception as e:
-        db.session.rollback()
+        # Phase 3a: FAILURE — refresh session, mark failed, re-raise
+        db.session.remove()
+        flashcard_set = db.session.get(FlashcardSet, set_id)
         flashcard_set.status = "failed"
         db.session.commit()
         raise RuntimeError(f"Flashcard generation failed: {e}") from e
 
+    # Phase 3b: SUCCESS — refresh session, write cards, mark ready
+    db.session.remove()
+    flashcard_set = db.session.get(FlashcardSet, set_id)
+    for index, c in enumerate(cards_data):
+        card = Flashcard(
+            set_id=flashcard_set.id,
+            front_text=c["front"],
+            back_text=c["back"],
+            order_index=index,
+        )
+        db.session.add(card)
+
+    flashcard_set.status = "ready"
+    db.session.commit()
     return flashcard_set
 
 
 def mark_card(card, is_learned=None, difficulty=None):
-    """Updates a single card's review state. Called from the study
-    view whenever the student flips + rates a card — kept as a small
-    targeted update rather than resaving the whole set."""
     if is_learned is not None:
         card.is_learned = is_learned
     if difficulty is not None:

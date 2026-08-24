@@ -4,7 +4,7 @@ import time
 import google.generativeai as genai
 from flask import current_app
 
-DEFAULT_TIMEOUT_SECONDS = 30  # comfortably under Vercel's 60s function limit
+DEFAULT_TIMEOUT_SECONDS = 15  # comfortably under Vercel's 60s function limit
 
 
 def get_gemini_client():
@@ -55,7 +55,7 @@ def _generate_with_timeout(model, prompt, timeout_seconds):
         return future.result(timeout=timeout_seconds)
 
 
-def generate_content(prompt, max_retries=3, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
+def generate_content(prompt, max_retries=1, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
     """The single entry point every service in this app should use to
     talk to Gemini. Centralizing this here means: model choice, retry
     logic, timeout enforcement, and error handling all live in exactly

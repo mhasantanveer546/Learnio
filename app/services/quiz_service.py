@@ -7,7 +7,6 @@ from app.ai.prompts import build_quiz_prompt
 
 
 def _validate_quiz_json(parsed):
-    """Defensive validation: don't trust AI output blindly."""
     if not isinstance(parsed, dict):
         raise ValueError(f"Expected JSON object, got {type(parsed).__name__}")
 
@@ -35,9 +34,7 @@ def _validate_quiz_json(parsed):
 
 
 def generate_quiz(quiz_id, material_id, num_questions, question_types, difficulty):
-    """Generates quiz questions for an EXISTING quiz row (created by the
-    route with status='processing'). Re-queries quiz and material in the
-    background thread's fresh session so lazy loading works."""
+    """Generates quiz with DB session refresh after Gemini call."""
 
     quiz = db.session.get(Quiz, quiz_id)
     if quiz is None:
@@ -52,10 +49,12 @@ def generate_quiz(quiz_id, material_id, num_questions, question_types, difficult
     quiz.difficulty = difficulty
     db.session.commit()
 
+    extracted_text = material.extracted_text
     prompt = build_quiz_prompt(
-        material.extracted_text, num_questions, question_types, difficulty
+        extracted_text, num_questions, question_types, difficulty
     )
 
+    # Phase 2: Call Gemini
     try:
         raw_response = generate_content(prompt)
         cleaned = (
@@ -67,30 +66,32 @@ def generate_quiz(quiz_id, material_id, num_questions, question_types, difficult
         )
         parsed = json.loads(cleaned)
         parsed = _validate_quiz_json(parsed)
-
-        for index, q in enumerate(parsed["questions"]):
-            question = QuizQuestion(
-                quiz_id=quiz.id,
-                question_type=q["type"],
-                question_text=q["question"],
-                options=json.dumps(q["options"]) if q.get("options") else None,
-                correct_answer=q["correct_answer"],
-                order_index=index,
-            )
-            db.session.add(question)
-
-        quiz.status = "ready"
-        db.session.commit()
+        questions_data = parsed["questions"]
 
     except Exception as e:
-        # Catch ALL exceptions — not just JSON/Value/RuntimeError.
-        # Vercel may kill the thread, but if the code fails normally
-        # we MUST mark the row as failed so the user isn't stuck.
-        db.session.rollback()
+        # FAILURE
+        db.session.remove()
+        quiz = db.session.get(Quiz, quiz_id)
         quiz.status = "failed"
         db.session.commit()
         raise RuntimeError(f"Quiz generation failed: {e}") from e
 
+    # SUCCESS
+    db.session.remove()
+    quiz = db.session.get(Quiz, quiz_id)
+    for index, q in enumerate(questions_data):
+        question = QuizQuestion(
+            quiz_id=quiz.id,
+            question_type=q["type"],
+            question_text=q["question"],
+            options=json.dumps(q["options"]) if q.get("options") else None,
+            correct_answer=q["correct_answer"],
+            order_index=index,
+        )
+        db.session.add(question)
+
+    quiz.status = "ready"
+    db.session.commit()
     return quiz
 
 
@@ -102,10 +103,6 @@ def start_attempt(quiz, user_id):
 
 
 def submit_attempt(attempt, submitted_answers):
-    """submitted_answers: dict of {question_id: answer_text}.
-    Auto-grades mcq/true_false immediately; short/long are left
-    ungraded (is_correct=None) until the student self-assesses."""
-
     score = 0
     for question in attempt.quiz.questions:
         submitted = submitted_answers.get(str(question.id), "").strip()
@@ -126,7 +123,7 @@ def submit_attempt(attempt, submitted_answers):
         )
         db.session.add(answer)
 
-    attempt.score = score  # partial — short/long not yet counted
+    attempt.score = score
     from datetime import datetime, timezone
 
     attempt.completed_at = datetime.now(timezone.utc)
@@ -135,9 +132,6 @@ def submit_attempt(attempt, submitted_answers):
 
 
 def self_grade_answer(answer, is_correct):
-    """Called when a student marks their own short/long answer as
-    right or wrong. Updates the answer and recalculates the attempt's
-    total score."""
     answer.is_correct = is_correct
     db.session.commit()
 

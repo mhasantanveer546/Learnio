@@ -11,6 +11,11 @@ from app.extensions import db
 def _run_in_context(app, func, *args, **kwargs):
     """Run a function inside the Flask app context so db and logger work."""
     with app.app_context():
+        # CRITICAL: Discard any potentially stale session/connection
+        # before starting work. The connection pool might hand us a
+        # connection that was checked out before Vercel froze the
+        # function, and Neon may have closed it during the freeze.
+        db.session.remove()
         try:
             current_app.logger.info(f"Background task started: {func.__name__}")
             func(*args, **kwargs)
@@ -22,16 +27,12 @@ def _run_in_context(app, func, *args, **kwargs):
 def run_background_task(func, *args, **kwargs):
     """Start func in a background thread with app context.
     Returns immediately — caller must NOT wait for result."""
-    # Capture the current app object (not current_app proxy)
     app = current_app._get_current_object()
     thread = threading.Thread(
         target=_run_in_context,
         args=(app, func) + args,
         kwargs=kwargs,
     )
-    # Non-daemon: Python waits for non-daemon threads to finish before
-    # exiting the process. On Vercel this gives the thread a better
-    # chance to complete before the environment is destroyed.
     thread.daemon = False
     thread.start()
     return thread
