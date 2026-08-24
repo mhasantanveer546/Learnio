@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timezone
-from werkzeug.urls import url_parse
+from urllib.parse import urlparse
 
 from app.extensions import db, limiter
 from app.forms.auth import LoginForm, RegisterForm
@@ -59,7 +59,7 @@ def login():
             # url_parse().netloc is empty for relative URLs like /dashboard
             # but contains 'evil.com' for absolute URLs like //evil.com.
             next_page = request.args.get("next")
-            if not next_page or url_parse(next_page).netloc != "":
+            if not next_page or urlparse(next_page).netloc != "":
                 next_page = url_for("dashboard.dashboard")
 
             flash("Logged in successfully!", "success")
