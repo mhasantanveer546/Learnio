@@ -68,6 +68,9 @@ def test_generate_quiz_handles_invalid_json(make_user, make_material, monkeypatc
     db.session.add(quiz)
     db.session.commit()
 
+    quiz_id = quiz.id  # CAPTURE before service call — db.session.remove()
+                       # in the service will detach this instance
+
     def mock_generate_content(prompt):
         return "not valid json"
 
@@ -75,17 +78,16 @@ def test_generate_quiz_handles_invalid_json(make_user, make_material, monkeypatc
 
     with pytest.raises(RuntimeError):
         generate_quiz(
-            quiz_id=quiz.id,
+            quiz_id=quiz_id,
             material_id=material.id,
             num_questions=1,
             question_types=["mcq"],
             difficulty="easy",
         )
 
-    # Refresh from DB — the service committed the failed status
-    quiz = db.session.get(Quiz, quiz.id)
+    # Re-query from DB using captured ID
+    quiz = db.session.get(Quiz, quiz_id)
     assert quiz.status == "failed"
-
 
 def test_generate_flashcards_creates_cards(make_user, make_material, monkeypatch):
     owner = make_user()
