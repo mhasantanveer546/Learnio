@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy - Learnio{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 8px;">Privacy Policy</h1>
+    <p style="color: var(--text-muted); margin-bottom: 32px;">Last updated: August 2026</p>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px;">1. What We Collect</h2>
+        <p style="line-height: 1.7; margin-bottom: 12px;">
+            We collect the minimum data needed to provide Learnio's services:
+        </p>
+        <ul style="line-height: 1.8; padding-left: 20px; color: var(--text-muted);">
+            <li><strong>Account data:</strong> username, email, password (hashed)</li>
+            <li><strong>Study materials:</strong> files you upload (PDF, DOCX, PPTX, TXT, images)</li>
+            <li><strong>Generated content:</strong> AI summaries, quizzes, flashcards, chat messages</li>
+            <li><strong>Usage data:</strong> quiz scores, flashcard progress, last login time</li>
+        </ul>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px;">2. How We Use Your Data</h2>
+        <ul style="line-height: 1.8; padding-left: 20px; color: var(--text-muted);">
+            <li>To provide the study tools you request (quizzes, summaries, flashcards)</li>
+            <li>To power the AI chat using your uploaded material as context</li>
+            <li>To track your learning progress</li>
+            <li>To send important service notifications (rarely)</li>
+        </ul>
+        <p style="line-height: 1.7; margin-top: 12px;">
+            <strong>We do NOT:</strong> sell your data, use it for advertising, or train AI models on it.
+        </p>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px;">3. Third-Party Services</h2>
+        <p style="line-height: 1.7; margin-bottom: 12px;">
+            We use these services to operate Learnio:
+        </p>
+        <ul style="line-height: 1.8; padding-left: 20px; color: var(--text-muted);">
+            <li><strong>Google Gemini:</strong> AI generation (your material is sent to Google's API)</li>
+            <li><strong>Backblaze R2:</strong> File storage</li>
+            <li><strong>Neon:</strong> Database hosting</li>
+            <li><strong>Vercel:</strong> Application hosting</li>
+            <li><strong>Sentry:</strong> Error monitoring (no personal data, just error traces)</li>
+        </ul>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px;">4. Data Retention</h2>
+        <p style="line-height: 1.7;">
+            We keep your data as long as your account is active. When you delete a study material, 
+            we delete the file from storage and remove its data from our database. If you delete 
+            your account, all your data is permanently removed within 30 days.
+        </p>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px;">5. Your Rights</h2>
+        <p style="line-height: 1.7; margin-bottom: 12px;">
+            Depending on your location, you may have the right to:
+        </p>
+        <ul style="line-height: 1.8; padding-left: 20px; color: var(--text-muted);">
+            <li>Access the data we hold about you</li>
+            <li>Correct inaccurate data</li>
+            <li>Delete your account and all associated data</li>
+            <li>Export your data</li>
+        </ul>
+        <p style="line-height: 1.7; margin-top: 12px;">
+            Contact us at <strong>mhasantanveer546@gmail.com</strong> to exercise these rights.
+        </p>
+    </div>
+
+    <div class="card">
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px;">6. Security</h2>
+        <p style="line-height: 1.7;">
+            Passwords are hashed with bcrypt. All traffic is encrypted with HTTPS. 
+            Files are stored with signed URLs that expire after 5 minutes. 
+            We use CSRF protection and rate limiting to prevent abuse.
+        </p>
+    </div>
+</div>
+{% endblock %}

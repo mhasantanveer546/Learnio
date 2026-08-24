@@ -16,7 +16,6 @@ def health_check():
     """Lightweight health check for uptime monitors.
     Verifies the app is responding and the database is reachable."""
     try:
-        # Lightweight query: just check we can talk to the DB
         db.session.execute(db.text("SELECT 1"))
         db_status = "ok"
     except Exception as e:
@@ -28,3 +27,13 @@ def health_check():
         "status": "healthy" if db_status == "ok" else "unhealthy",
         "database": db_status,
     }), status_code
+
+
+@main_bp.route("/privacy")
+def privacy_policy():
+    return render_template("legal/privacy.html")
+
+
+@main_bp.route("/terms")
+def terms_of_service():
+    return render_template("legal/terms.html")
