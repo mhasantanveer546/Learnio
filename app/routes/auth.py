@@ -55,10 +55,10 @@ def login():
 
             current_app.logger.info(f"User logged in: {user.email} (id={user.id})")
 
-            # SECURE: Only redirect to URLs on our own domain.
-            # url_parse().netloc is empty for relative URLs like /dashboard
-            # but contains 'evil.com' for absolute URLs like //evil.com.
-            next_page = request.args.get("next")
+            # SECURE: Check both query string (GET) and form data (POST).
+            # The template includes a hidden 'next' field so the redirect
+            # URL survives the form submission.
+            next_page = request.args.get("next") or request.form.get("next")
             if not next_page or urlparse(next_page).netloc != "":
                 next_page = url_for("dashboard.dashboard")
 
@@ -69,7 +69,7 @@ def login():
         flash("Invalid email or password.", "danger")
 
     return render_template("auth/login.html", form=form)
-
+    
 @auth_bp.route("/logout")
 @login_required
 def logout():

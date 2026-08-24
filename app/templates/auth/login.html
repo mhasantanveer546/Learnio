@@ -12,6 +12,7 @@
 <div class="card">
     <form method="POST" action="{{ url_for('auth.login') }}">
         {{ form.hidden_tag() }}
+        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
         <div class="form-group">
             {{ form.email.label(class="form-label") }}
             {{ form.email(class="form-control", placeholder="you@example.com") }}
