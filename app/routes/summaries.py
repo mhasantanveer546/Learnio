@@ -21,8 +21,20 @@ def generate_summary_route(material_id):
         flash("This material has no extracted text yet.", "warning")
         return redirect(url_for("summaries.view_summary", material_id=material_id))
 
+    # Check existing summary FIRST
     existing = Summary.query.filter_by(material_id=material_id).first()
+
     if existing:
+        if existing.status == "ready":
+            flash("A summary already exists for this material.", "info")
+            return redirect(url_for("summaries.view_summary", material_id=material_id))
+
+        if existing.status == "processing":
+            elapsed = (datetime.now(timezone.utc) - existing.created_at).total_seconds()
+            if elapsed < 30:
+                flash("Summary generation is already in progress. Please wait.", "info")
+                return redirect(url_for("summaries.view_summary", material_id=material_id))
+
         db.session.delete(existing)
         db.session.commit()
 
@@ -30,12 +42,10 @@ def generate_summary_route(material_id):
     db.session.add(summary)
     db.session.commit()
 
-    # Pass ID only — ORM objects are bound to the request session
     run_background_task(generate_summary, material_id=material.id)
 
     flash("Summary generation started!", "info")
     return redirect(url_for("summaries.view_summary", material_id=material_id))
-
 
 @summaries_bp.route("/<int:material_id>/status")
 @login_required

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, abort
 from flask_login import login_required, current_user
 
@@ -36,14 +36,25 @@ def generate_quiz_route(material_id):
         flash("This material has no extracted text yet.", "warning")
         return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
 
-    # Check if a quiz already exists
+    # Check existing quiz FIRST — before any writes or background tasks.
     existing = Quiz.query.filter_by(material_id=material_id).first()
-    if existing and existing.status == "ready":
-        flash("A quiz already exists for this material.", "info")
-        return redirect(url_for("quizzes.take_quiz", quiz_id=existing.id))
 
-    # If failed or doesn't exist, create/regenerate
     if existing:
+        # Already ready? Send them to it.
+        if existing.status == "ready":
+            flash("A quiz already exists for this material.", "info")
+            return redirect(url_for("quizzes.take_quiz", quiz_id=existing.id))
+
+        # Currently processing? Check cooldown to prevent double-clicks.
+        if existing.status == "processing":
+            elapsed = (datetime.now(timezone.utc) - existing.created_at).total_seconds()
+            if elapsed < 30:
+                flash("Quiz generation is already in progress. Please wait.", "info")
+                return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
+            # If it's been processing for 30-180 seconds, let them retry
+            # (our stale detection at 3 minutes will catch truly dead threads)
+
+        # Failed or old processing — delete and regenerate
         db.session.delete(existing)
         db.session.commit()
 
@@ -62,8 +73,6 @@ def generate_quiz_route(material_id):
     difficulty = request.form.get("difficulty", "medium")
 
     # Start generation in background with captured parameters
-    # Pass IDs only — ORM objects are bound to the request session
-    # and become detached when that session closes.
     run_background_task(
         generate_quiz,
         quiz_id=quiz.id,
@@ -75,7 +84,6 @@ def generate_quiz_route(material_id):
 
     flash("Quiz generation started! This may take a moment.", "info")
     return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
-
 
 @quizzes_bp.route("/<int:quiz_id>/take", methods=["GET"])
 @login_required

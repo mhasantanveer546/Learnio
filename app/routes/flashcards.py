@@ -21,8 +21,21 @@ def generate_flashcards_route(material_id):
         flash("This material has no extracted text yet.", "warning")
         return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
 
+    # Check existing set FIRST
     existing = FlashcardSet.query.filter_by(material_id=material_id).first()
+
     if existing:
+        if existing.status == "ready":
+            flash("Flashcards already exist for this material.", "info")
+            return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
+
+        if existing.status == "processing":
+            elapsed = (datetime.now(timezone.utc) - existing.created_at).total_seconds()
+            if elapsed < 30:
+                flash("Flashcard generation is already in progress. Please wait.", "info")
+                return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
+
+        # Delete old set (failed or stale)
         for card in list(existing.cards):
             db.session.delete(card)
         db.session.delete(existing)
@@ -34,12 +47,10 @@ def generate_flashcards_route(material_id):
 
     num_cards = request.form.get("num_cards", 15, type=int)
 
-    # Pass ID only — ORM objects are bound to the request session
     run_background_task(generate_flashcards, material_id=material.id, num_cards=num_cards)
 
     flash("Flashcard generation started!", "info")
     return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
-
 
 @flashcards_bp.route("/<int:material_id>/status")
 @login_required
