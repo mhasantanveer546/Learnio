@@ -24,7 +24,8 @@ class Config:
     SESSION_COOKIE_SECURE = False   # overridden in ProductionConfig
 
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-    TESSERACT_CMD = os.environ.get("TESSERACT_CMD")  # optional — only needed if tesseract isn't on system PATH
+    TESSERACT_CMD = os.environ.get("TESSERACT_CMD")  # optional — only for local dev with custom Tesseract path
+    OCR_SPACE_API_KEY = os.environ.get("OCR_SPACE_API_KEY")  # for image OCR on serverless environments
     MAIL_SERVER = os.environ.get("MAIL_SERVER")
     MAIL_PORT = os.environ.get("MAIL_PORT")
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
@@ -68,7 +69,7 @@ class TestingConfig(Config):
     RATELIMIT_ENABLED = False   # ← ADD THIS
 
 config = {
-    "development": DevelopmentConfig,
-    "production": ProductionConfig,
-    "testing": TestingConfig,
+    "development": "DevelopmentConfig",
+    "production": "ProductionConfig",
+    "testing": "TestingConfig",
 }
