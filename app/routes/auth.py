@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timezone
+from werkzeug.urls import url_parse
 
 from app.extensions import db, limiter
 from app.forms.auth import LoginForm, RegisterForm
@@ -53,8 +54,12 @@ def login():
             db.session.commit()
 
             current_app.logger.info(f"User logged in: {user.email} (id={user.id})")
+
+            # SECURE: Only redirect to URLs on our own domain.
+            # url_parse().netloc is empty for relative URLs like /dashboard
+            # but contains 'evil.com' for absolute URLs like //evil.com.
             next_page = request.args.get("next")
-            if not next_page or not next_page.startswith("/"):
+            if not next_page or url_parse(next_page).netloc != "":
                 next_page = url_for("dashboard.dashboard")
 
             flash("Logged in successfully!", "success")
@@ -64,7 +69,6 @@ def login():
         flash("Invalid email or password.", "danger")
 
     return render_template("auth/login.html", form=form)
-
 
 @auth_bp.route("/logout")
 @login_required
