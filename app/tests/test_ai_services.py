@@ -83,7 +83,7 @@ def test_generate_quiz_handles_invalid_json(make_user, make_material, monkeypatc
         )
 
     # Refresh from DB — the service committed the failed status
-    db.session.refresh(quiz)
+    quiz = db.session.get(Quiz, quiz.id)
     assert quiz.status == "failed"
 
 
