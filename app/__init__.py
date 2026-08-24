@@ -119,4 +119,39 @@ def create_app(config_name="development"):
     def inject_now():
         return {"current_year": dt.now().year}
         
+    @app.after_request
+    def add_security_headers(response):
+        """Inject security headers on every response. These are
+        defense-in-depth measures that reduce the attack surface
+        for common web vulnerabilities."""
+        # Prevent clickjacking: never allow this site to be embedded
+        # in an iframe, frame, or object on another domain.
+        response.headers["X-Frame-Options"] = "DENY"
+
+        # Prevent MIME sniffing: browser must respect the Content-Type
+        # header sent by the server, not guess the file type.
+        response.headers["X-Content-Type-Options"] = "nosniff"
+
+        # Limit referrer leakage: when navigating to a different origin,
+        # only send the origin (https://learnio.com), not the full path
+        # or query string. Same-origin requests still send full referrer.
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # Basic Content Security Policy: only allow scripts/styles from
+        # same origin, cdnjs (Font Awesome), and fonts.gstatic.com.
+        # 'unsafe-inline' is needed for the inline <script> in base.html
+        # (POMODORO constants). Removing it requires externalizing those
+        # scripts — a future improvement.
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none';"
+        )
+        response.headers["Content-Security-Policy"] = csp
+
+        return response
     return app
