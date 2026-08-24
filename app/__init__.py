@@ -62,8 +62,13 @@ def create_app(config_name="development"):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
+        # Rate limiter: use database-backed storage in production so rate
+    # limits are global across all Vercel serverless instances.
+    # In-memory storage (the default) resets on every deploy and each
+    # instance has its own counter — effectively useless on serverless.
+    if config_name == "production" and app.config.get("SQLALCHEMY_DATABASE_URI"):
+        limiter.storage_uri = app.config["SQLALCHEMY_DATABASE_URI"]
     limiter.init_app(app)
-
        
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)

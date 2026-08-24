@@ -6,6 +6,16 @@ from app.models import StudyMaterial, Flashcard, FlashcardSet
 from app.services.flashcard_service import generate_flashcards, mark_card
 from app.services.background_ai import run_background_task
 
+
+def _elapsed_seconds(created_at):
+    """Safely compute elapsed time since created_at, handling both
+    timezone-aware and naive datetimes from the database."""
+    now = datetime.now(timezone.utc)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    return (now - created_at).total_seconds()
+
+
 flashcards_bp = Blueprint("flashcards", __name__, url_prefix="/flashcards")
 
 
@@ -21,7 +31,6 @@ def generate_flashcards_route(material_id):
         flash("This material has no extracted text yet.", "warning")
         return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
 
-    # Check existing set FIRST
     existing = FlashcardSet.query.filter_by(material_id=material_id).first()
 
     if existing:
@@ -30,12 +39,11 @@ def generate_flashcards_route(material_id):
             return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
 
         if existing.status == "processing":
-            elapsed = (datetime.now(timezone.utc) - existing.created_at).total_seconds()
+            elapsed = _elapsed_seconds(existing.created_at)
             if elapsed < 30:
                 flash("Flashcard generation is already in progress. Please wait.", "info")
                 return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
 
-        # Delete old set (failed or stale)
         for card in list(existing.cards):
             db.session.delete(card)
         db.session.delete(existing)
@@ -52,6 +60,7 @@ def generate_flashcards_route(material_id):
     flash("Flashcard generation started!", "info")
     return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
 
+
 @flashcards_bp.route("/<int:material_id>/status")
 @login_required
 def flashcard_status(material_id):
@@ -59,9 +68,8 @@ def flashcard_status(material_id):
     if flashcard_set.material.user_id != current_user.id:
         abort(403)
 
-    # Stale processing detection
     if flashcard_set.status == "processing":
-        elapsed = (datetime.now(timezone.utc) - flashcard_set.created_at).total_seconds()
+        elapsed = _elapsed_seconds(flashcard_set.created_at)
         if elapsed > 180:
             flashcard_set.status = "failed"
             db.session.commit()
@@ -72,7 +80,6 @@ def flashcard_status(material_id):
 @flashcards_bp.route("/<int:material_id>", methods=["GET"])
 @login_required
 def study_flashcards(material_id):
-    """Renders the study view for any status — polling handles processing/failed."""
     material = StudyMaterial.query.filter_by(
         id=material_id, user_id=current_user.id
     ).first_or_404()
@@ -85,9 +92,6 @@ def study_flashcards(material_id):
 @flashcards_bp.route("/card/<int:card_id>/mark", methods=["POST"])
 @login_required
 def mark_card_route(card_id):
-    """AJAX endpoint the study view calls on every flip/rating —
-    ownership verified by joining through the material, same pattern
-    as self_grade_route in quizzes.py."""
     card = Flashcard.query.join(Flashcard.flashcard_set).join(StudyMaterial).filter(
         Flashcard.id == card_id, StudyMaterial.user_id == current_user.id
     ).first_or_404()

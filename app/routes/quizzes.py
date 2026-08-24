@@ -1,4 +1,5 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
+from urllib.parse import urlparse
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, abort
 from flask_login import login_required, current_user
 
@@ -6,6 +7,16 @@ from app.extensions import db, limiter
 from app.models import StudyMaterial, Quiz, QuizAttempt, QuizAnswer
 from app.services.quiz_service import generate_quiz, start_attempt, submit_attempt, self_grade_answer
 from app.services.background_ai import run_background_task
+
+
+def _elapsed_seconds(created_at):
+    """Safely compute elapsed time since created_at, handling both
+    timezone-aware and naive datetimes from the database."""
+    now = datetime.now(timezone.utc)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    return (now - created_at).total_seconds()
+
 
 quizzes_bp = Blueprint("quizzes", __name__, url_prefix="/quizzes")
 
@@ -24,6 +35,7 @@ def configure_quiz(material_id):
     quiz = Quiz.query.filter_by(material_id=material_id).first()
     return render_template("quizzes/configure.html", material=material, quiz=quiz)
 
+
 @quizzes_bp.route("/<int:material_id>/generate", methods=["POST"])
 @limiter.limit("3 per minute")
 @login_required
@@ -36,29 +48,22 @@ def generate_quiz_route(material_id):
         flash("This material has no extracted text yet.", "warning")
         return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
 
-    # Check existing quiz FIRST — before any writes or background tasks.
     existing = Quiz.query.filter_by(material_id=material_id).first()
 
     if existing:
-        # Already ready? Send them to it.
         if existing.status == "ready":
             flash("A quiz already exists for this material.", "info")
             return redirect(url_for("quizzes.take_quiz", quiz_id=existing.id))
 
-        # Currently processing? Check cooldown to prevent double-clicks.
         if existing.status == "processing":
-            elapsed = (datetime.now(timezone.utc) - existing.created_at).total_seconds()
+            elapsed = _elapsed_seconds(existing.created_at)
             if elapsed < 30:
                 flash("Quiz generation is already in progress. Please wait.", "info")
                 return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
-            # If it's been processing for 30-180 seconds, let them retry
-            # (our stale detection at 3 minutes will catch truly dead threads)
 
-        # Failed or old processing — delete and regenerate
         db.session.delete(existing)
         db.session.commit()
 
-    # Create the quiz row immediately with "processing" status
     quiz = Quiz(
         material_id=material_id,
         title=f"Quiz — {material.original_name}",
@@ -67,12 +72,10 @@ def generate_quiz_route(material_id):
     db.session.add(quiz)
     db.session.commit()
 
-    # Get form data BEFORE starting background task
     num_questions = request.form.get("num_questions", 5, type=int)
     question_types = request.form.getlist("question_types") or ["mcq"]
     difficulty = request.form.get("difficulty", "medium")
 
-    # Start generation in background with captured parameters
     run_background_task(
         generate_quiz,
         quiz_id=quiz.id,
@@ -84,6 +87,7 @@ def generate_quiz_route(material_id):
 
     flash("Quiz generation started! This may take a moment.", "info")
     return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
+
 
 @quizzes_bp.route("/<int:quiz_id>/take", methods=["GET"])
 @login_required
@@ -171,19 +175,16 @@ def quiz_history(material_id):
         chart_data=chart_data,
     )
 
+
 @quizzes_bp.route("/<int:quiz_id>/status")
 @login_required
 def quiz_status(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-    # Verify ownership via material
     if quiz.material.user_id != current_user.id:
         abort(403)
 
-    # Stale processing detection: Vercel may kill background threads,
-    # leaving status stuck on "processing". After 3 minutes, assume
-    # the thread is dead and mark as failed so the user can retry.
     if quiz.status == "processing":
-        elapsed = (datetime.now(timezone.utc) - quiz.created_at).total_seconds()
+        elapsed = _elapsed_seconds(quiz.created_at)
         if elapsed > 180:
             quiz.status = "failed"
             db.session.commit()

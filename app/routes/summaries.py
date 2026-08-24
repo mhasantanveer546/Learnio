@@ -6,6 +6,16 @@ from app.models import StudyMaterial, Summary
 from app.services.summary_service import generate_summary
 from app.services.background_ai import run_background_task
 
+
+def _elapsed_seconds(created_at):
+    """Safely compute elapsed time since created_at, handling both
+    timezone-aware and naive datetimes from the database."""
+    now = datetime.now(timezone.utc)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    return (now - created_at).total_seconds()
+
+
 summaries_bp = Blueprint("summaries", __name__, url_prefix="/summaries")
 
 
@@ -21,7 +31,6 @@ def generate_summary_route(material_id):
         flash("This material has no extracted text yet.", "warning")
         return redirect(url_for("summaries.view_summary", material_id=material_id))
 
-    # Check existing summary FIRST
     existing = Summary.query.filter_by(material_id=material_id).first()
 
     if existing:
@@ -30,7 +39,7 @@ def generate_summary_route(material_id):
             return redirect(url_for("summaries.view_summary", material_id=material_id))
 
         if existing.status == "processing":
-            elapsed = (datetime.now(timezone.utc) - existing.created_at).total_seconds()
+            elapsed = _elapsed_seconds(existing.created_at)
             if elapsed < 30:
                 flash("Summary generation is already in progress. Please wait.", "info")
                 return redirect(url_for("summaries.view_summary", material_id=material_id))
@@ -47,6 +56,7 @@ def generate_summary_route(material_id):
     flash("Summary generation started!", "info")
     return redirect(url_for("summaries.view_summary", material_id=material_id))
 
+
 @summaries_bp.route("/<int:material_id>/status")
 @login_required
 def summary_status(material_id):
@@ -54,9 +64,8 @@ def summary_status(material_id):
     if summary.material.user_id != current_user.id:
         abort(403)
 
-    # Stale processing detection
     if summary.status == "processing":
-        elapsed = (datetime.now(timezone.utc) - summary.created_at).total_seconds()
+        elapsed = _elapsed_seconds(summary.created_at)
         if elapsed > 180:
             summary.status = "failed"
             db.session.commit()
@@ -67,7 +76,6 @@ def summary_status(material_id):
 @summaries_bp.route("/<int:material_id>", methods=["GET"])
 @login_required
 def view_summary(material_id):
-    """Renders the summary page for any status — polling handles processing/failed."""
     material = StudyMaterial.query.filter_by(
         id=material_id, user_id=current_user.id
     ).first_or_404()
