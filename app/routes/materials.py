@@ -47,6 +47,7 @@ def list_materials():
 
 @materials_bp.route("/upload", methods=["POST"])
 @login_required
+@limiter.limit("5 per minute")
 def upload_material():
     form = UploadMaterialForm()
     form.subject_id.choices = [
