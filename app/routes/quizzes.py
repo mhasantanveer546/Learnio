@@ -33,8 +33,11 @@ def configure_quiz(material_id):
         return redirect(url_for("subjects.view_subject", subject_id=material.subject_id))
 
     quiz = Quiz.query.filter_by(material_id=material_id).first()
-    return render_template("quizzes/configure.html", material=material, quiz=quiz)
-
+    resp = make_response(render_template("quizzes/configure.html", material=material, quiz=quiz))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 @quizzes_bp.route("/<int:material_id>/generate", methods=["POST"])
 @limiter.limit("3 per minute")

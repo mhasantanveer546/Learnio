@@ -87,10 +87,14 @@ def study_flashcards(material_id):
         id=material_id, user_id=current_user.id
     ).first_or_404()
 
-    return render_template(
+    resp = render_template(
         "flashcards/study.html", material=material, flashcard_set=material.flashcard_set
     )
-
+    resp = make_response(resp)
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 @flashcards_bp.route("/card/<int:card_id>/mark", methods=["POST"])
 @login_required

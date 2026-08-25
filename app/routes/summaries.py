@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import Blueprint, render_template, jsonify, abort, current_app, flash, redirect, url_for
+from flask import Blueprint, render_template, jsonify, abort, current_app, flash, redirect, url_for, make_response
 from flask_login import login_required, current_user
 from app.extensions import limiter, db
 from app.models import StudyMaterial, Summary
@@ -84,4 +84,10 @@ def view_summary(material_id):
         id=material_id, user_id=current_user.id
     ).first_or_404()
 
-    return render_template("materials/summary.html", material=material, summary=material.summary)
+    resp = render_template("materials/summary.html", material=material, summary=material.summary)
+    # Prevent stale "failed" state from showing after successful generation
+    resp = make_response(resp)
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
