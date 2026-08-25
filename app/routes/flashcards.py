@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from time import time
 from flask import Blueprint, render_template, jsonify, abort, current_app, request, flash, redirect, url_for, make_response
 from flask_login import login_required, current_user
 from app.extensions import limiter, db
@@ -8,8 +9,6 @@ from app.services.background_ai import run_background_task
 
 
 def _elapsed_seconds(created_at):
-    """Safely compute elapsed time since created_at, handling both
-    timezone-aware and naive datetimes from the database."""
     now = datetime.now(timezone.utc)
     if created_at.tzinfo is None:
         created_at = created_at.replace(tzinfo=timezone.utc)
@@ -62,7 +61,8 @@ def generate_flashcards_route(material_id):
         current_app.logger.exception(f"Flashcard generation failed: {e}")
         flash("Flashcard generation failed. Please try again.", "danger")
 
-    return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
+    return redirect(url_for("flashcards.study_flashcards", material_id=material_id, t=int(time())))
+
 
 @flashcards_bp.route("/<int:material_id>/status")
 @login_required
@@ -77,7 +77,11 @@ def flashcard_status(material_id):
             flashcard_set.status = "failed"
             db.session.commit()
 
-    return jsonify({"status": flashcard_set.status})
+    resp = jsonify({"status": flashcard_set.status})
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 
 @flashcards_bp.route("/<int:material_id>", methods=["GET"])
@@ -87,14 +91,14 @@ def study_flashcards(material_id):
         id=material_id, user_id=current_user.id
     ).first_or_404()
 
-    resp = render_template(
+    resp = make_response(render_template(
         "flashcards/study.html", material=material, flashcard_set=material.flashcard_set
-    )
-    resp = make_response(resp)
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    ))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
     return resp
+
 
 @flashcards_bp.route("/card/<int:card_id>/mark", methods=["POST"])
 @login_required

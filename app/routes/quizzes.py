@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
+from time import time
 from urllib.parse import urlparse
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, abort, make_response
 from flask_login import login_required, current_user
 
 from app.extensions import db, limiter
@@ -33,11 +34,8 @@ def configure_quiz(material_id):
         return redirect(url_for("subjects.view_subject", subject_id=material.subject_id))
 
     quiz = Quiz.query.filter_by(material_id=material_id).first()
-    resp = make_response(render_template("quizzes/configure.html", material=material, quiz=quiz))
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
-    resp.headers["Pragma"] = "no-cache"
-    resp.headers["Expires"] = "0"
-    return resp
+    return render_template("quizzes/configure.html", material=material, quiz=quiz)
+
 
 @quizzes_bp.route("/<int:material_id>/generate", methods=["POST"])
 @limiter.limit("3 per minute")
@@ -92,7 +90,8 @@ def generate_quiz_route(material_id):
         current_app.logger.exception(f"Quiz generation failed: {e}")
         flash("Quiz generation failed. Please try again.", "danger")
 
-    return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
+    return redirect(url_for("quizzes.configure_quiz", material_id=material_id, t=int(time())))
+
 
 @quizzes_bp.route("/<int:quiz_id>/take", methods=["GET"])
 @login_required
@@ -194,4 +193,8 @@ def quiz_status(quiz_id):
             quiz.status = "failed"
             db.session.commit()
 
-    return jsonify({"status": quiz.status})
+    resp = jsonify({"status": quiz.status})
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp

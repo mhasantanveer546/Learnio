@@ -1,15 +1,13 @@
 from datetime import datetime, timezone
+from time import time
 from flask import Blueprint, render_template, jsonify, abort, current_app, flash, redirect, url_for, make_response
 from flask_login import login_required, current_user
 from app.extensions import limiter, db
 from app.models import StudyMaterial, Summary
 from app.services.summary_service import generate_summary
-from app.services.background_ai import run_background_task
 
 
 def _elapsed_seconds(created_at):
-    """Safely compute elapsed time since created_at, handling both
-    timezone-aware and naive datetimes from the database."""
     now = datetime.now(timezone.utc)
     if created_at.tzinfo is None:
         created_at = created_at.replace(tzinfo=timezone.utc)
@@ -51,7 +49,6 @@ def generate_summary_route(material_id):
     db.session.add(summary)
     db.session.commit()
 
-    # SYNCHRONOUS on Vercel — background threads are frozen after response
     try:
         generate_summary(material_id=material.id)
         flash("Summary generated successfully!", "success")
@@ -59,7 +56,9 @@ def generate_summary_route(material_id):
         current_app.logger.exception(f"Summary generation failed: {e}")
         flash("Summary generation failed. Please try again.", "danger")
 
-    return redirect(url_for("summaries.view_summary", material_id=material_id))
+    # Cache-busting timestamp forces fresh load after redirect
+    return redirect(url_for("summaries.view_summary", material_id=material_id, t=int(time())))
+
 
 @summaries_bp.route("/<int:material_id>/status")
 @login_required
@@ -74,7 +73,11 @@ def summary_status(material_id):
             summary.status = "failed"
             db.session.commit()
 
-    return jsonify({"status": summary.status})
+    resp = jsonify({"status": summary.status})
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 
 @summaries_bp.route("/<int:material_id>", methods=["GET"])
@@ -84,10 +87,8 @@ def view_summary(material_id):
         id=material_id, user_id=current_user.id
     ).first_or_404()
 
-    resp = render_template("materials/summary.html", material=material, summary=material.summary)
-    # Prevent stale "failed" state from showing after successful generation
-    resp = make_response(resp)
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    resp = make_response(render_template("materials/summary.html", material=material, summary=material.summary))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
     return resp
