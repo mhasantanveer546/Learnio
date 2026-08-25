@@ -5,7 +5,7 @@ from app.models import StudyMaterial, Quiz, QuizQuestion, QuizAttempt, QuizAnswe
 from app.ai.client import generate_content
 from app.ai.prompts import build_quiz_prompt
 
-MAX_TEXT_LENGTH = 50000  # ~12K tokens, fast to process
+MAX_TEXT_LENGTH = 15000  # ~12K tokens, fast to process
 
 
 def _validate_quiz_json(parsed):

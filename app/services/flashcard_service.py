@@ -5,7 +5,7 @@ from app.models import StudyMaterial, FlashcardSet, Flashcard
 from app.ai.client import generate_content
 from app.ai.prompts import build_flashcard_prompt
 
-MAX_TEXT_LENGTH = 50000
+MAX_TEXT_LENGTH = 15000
 
 
 def _validate_flashcard_json(parsed):
