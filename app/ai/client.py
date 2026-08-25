@@ -1,30 +1,27 @@
-import json
-import socket
-import urllib.request
-import urllib.error
+import requests
 from flask import current_app
 
-DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_TIMEOUT_SECONDS = 15
 
 
 def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
+    """Call Gemini via the REST API using requests. Avoids grpc/threading
+    issues on Vercel and handles timeouts better than raw urllib."""
     api_key = current_app.config.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
 
-    models = ["gemini-1.5-flash", "gemini-flash-latest"]
+    # Proper REST API model names. 'gemini-flash-latest' is an SDK alias
+    # and causes hangs/404s on the REST endpoint.
+    models = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-pro"]
 
-    payload = json.dumps({
+    payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.7,
             "maxOutputTokens": 4096,
         }
-    }).encode("utf-8")
-
-    current_app.logger.info(
-        f"Gemini request: {len(payload)} bytes, {len(prompt)} chars prompt"
-    )
+    }
 
     for model_name in models:
         url = (
@@ -32,29 +29,15 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
             f"{model_name}:generateContent?key={api_key}"
         )
 
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        old_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(timeout_seconds)
-
         try:
-            with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-
-            socket.setdefaulttimeout(old_timeout)
+            resp = requests.post(url, json=payload, timeout=timeout_seconds)
+            resp.raise_for_status()
+            data = resp.json()
 
             if "candidates" in data and data["candidates"]:
                 text = data["candidates"][0]["content"]["parts"][0]["text"]
                 if not text:
                     raise RuntimeError("Gemini returned an empty response.")
-                current_app.logger.info(
-                    f"Gemini success: {len(text)} chars response"
-                )
                 return text
 
             if "error" in data:
@@ -62,34 +45,21 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
 
             raise RuntimeError("Gemini returned an unexpected response.")
 
-        except urllib.error.HTTPError as e:
-            socket.setdefaulttimeout(old_timeout)
-            body = ""
-            try:
-                if e.fp is not None:
-                    body = e.read().decode("utf-8", errors="ignore")
-            except Exception:
-                body = str(e)
-
-            if e.code == 404 and model_name != models[-1]:
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code if e.response else 0
+            if status == 404 and model_name != models[-1]:
                 current_app.logger.warning(
                     f"Gemini model {model_name} 404, trying fallback"
                 )
                 continue
-            raise RuntimeError(f"Gemini API call failed: {e.code} {e.reason} — {body}")
+            raise RuntimeError(f"Gemini API call failed: {status} {e}")
 
-        except urllib.error.URLError as e:
-            socket.setdefaulttimeout(old_timeout)
-            raise RuntimeError(f"Gemini API call failed: {e.reason}")
-
-        except TimeoutError:
-            socket.setdefaulttimeout(old_timeout)
+        except requests.exceptions.Timeout:
             raise RuntimeError(
                 f"Gemini API call failed: timed out after {timeout_seconds}s"
             )
 
-        except Exception as e:
-            socket.setdefaulttimeout(old_timeout)
+        except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Gemini API call failed: {e}")
 
     raise RuntimeError("Gemini API call failed: no valid model found.")
