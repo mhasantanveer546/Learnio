@@ -12,7 +12,6 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
 
-    # Try model names in order of preference
     models = ["gemini-1.5-flash", "gemini-flash-latest"]
 
     payload = json.dumps({
@@ -52,7 +51,13 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
             raise RuntimeError("Gemini returned an unexpected response.")
 
         except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="ignore")
+            body = ""
+            try:
+                if e.fp is not None:
+                    body = e.read().decode("utf-8", errors="ignore")
+            except Exception:
+                body = str(e)
+
             # 404 means model name wrong — try next one
             if e.code == 404 and model_name != models[-1]:
                 continue

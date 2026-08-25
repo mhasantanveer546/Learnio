@@ -1,3 +1,4 @@
+import io
 import json
 import urllib.error
 from unittest.mock import MagicMock, patch
@@ -70,11 +71,11 @@ def test_generate_content_api_error_in_body(monkeypatch):
 def test_generate_content_http_404_tries_fallback_model(monkeypatch):
     _setup_mock_app(monkeypatch)
 
-    # First model (gemini-1.5-flash) returns 404, second succeeds
     def side_effect(req, **kwargs):
         if "gemini-1.5-flash" in req.full_url:
             raise urllib.error.HTTPError(
-                req.full_url, 404, "Not Found", {}, b'{"error": {"message": "not found"}}'
+                req.full_url, 404, "Not Found", {},
+                io.BytesIO(b'{"error": {"message": "not found"}}')
             )
         return _make_response({
             "candidates": [{
@@ -92,7 +93,8 @@ def test_generate_content_http_404_on_last_model_raises(monkeypatch):
 
     def side_effect(req, **kwargs):
         raise urllib.error.HTTPError(
-            req.full_url, 404, "Not Found", {}, b'{"error": {"message": "not found"}}'
+            req.full_url, 404, "Not Found", {},
+            io.BytesIO(b'{"error": {"message": "not found"}}')
         )
 
     with patch("app.ai.client.urllib.request.urlopen", side_effect=side_effect):
@@ -105,7 +107,8 @@ def test_generate_content_http_429_raises(monkeypatch):
 
     def side_effect(req, **kwargs):
         raise urllib.error.HTTPError(
-            req.full_url, 429, "Too Many Requests", {}, b'{"error": {"message": "rate limited"}}'
+            req.full_url, 429, "Too Many Requests", {},
+            io.BytesIO(b'{"error": {"message": "rate limited"}}')
         )
 
     with patch("app.ai.client.urllib.request.urlopen", side_effect=side_effect):
