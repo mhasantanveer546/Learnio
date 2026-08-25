@@ -5,15 +5,13 @@ DEFAULT_TIMEOUT_SECONDS = 15
 
 
 def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
-    """Call Gemini via the REST API using requests. Avoids grpc/threading
-    issues on Vercel and handles timeouts better than raw urllib."""
+    """Call Gemini via the REST API using requests."""
     api_key = current_app.config.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
 
-    # Proper REST API model names. 'gemini-flash-latest' is an SDK alias
-    # and causes hangs/404s on the REST endpoint.
-    models = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-pro"]
+    # Your key only has Gemini 2.5/3.x models. gemini-1.5-flash is NOT available.
+    models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-flash-latest"]
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
