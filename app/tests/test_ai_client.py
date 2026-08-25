@@ -1,168 +1,138 @@
-import concurrent.futures
+import json
+import urllib.error
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock
 
-from app.ai.client import generate_content, _is_transient_error, _generate_with_timeout
-
-
-def test_is_transient_error_detects_rate_limit():
-    assert _is_transient_error(Exception("Rate limit exceeded")) is True
-
-
-def test_is_transient_error_detects_timeout():
-    assert _is_transient_error(Exception("Request timeout")) is True
-
-
-def test_is_transient_error_detects_deadline_exceeded():
-    assert _is_transient_error(Exception("Deadline of 30.0s exceeded")) is True
-
-
-def test_is_transient_error_detects_503():
-    assert _is_transient_error(Exception("503 Service Unavailable")) is True
-
-
-def test_is_transient_error_rejects_permanent():
-    assert _is_transient_error(Exception("Invalid API key")) is False
-
-
-def test_is_transient_error_rejects_random():
-    assert _is_transient_error(Exception("Something went wrong")) is False
+from app.ai.client import generate_content
 
 
 def _setup_mock_app(monkeypatch):
     mock_app = MagicMock()
     mock_app.config = {"GEMINI_API_KEY": "fake-key"}
     monkeypatch.setattr("app.ai.client.current_app", mock_app)
-    monkeypatch.setattr("app.ai.client.time.sleep", lambda x: None)
-    monkeypatch.setattr("app.ai.client.genai.configure", lambda **kwargs: None)
     return mock_app
 
 
-def _make_mock_model(response_text="Success", usage_metadata=None, side_effect=None):
-    mock_model = MagicMock()
-    mock_response = MagicMock()
-    mock_response.text = response_text
-    mock_response.usage_metadata = usage_metadata
-
-    if side_effect:
-        mock_model.generate_content.side_effect = side_effect
-    else:
-        mock_model.generate_content.return_value = mock_response
-
-    return mock_model
+def _make_response(data, status=200):
+    """Build a mock urllib response."""
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = json.dumps(data).encode("utf-8")
+    mock_resp.__enter__ = lambda s: s
+    mock_resp.__exit__ = lambda *args: None
+    return mock_resp
 
 
-def test_generate_content_retries_transient_errors(monkeypatch):
+def test_generate_content_success(monkeypatch):
     _setup_mock_app(monkeypatch)
 
-    call_count = 0
+    api_response = {
+        "candidates": [{
+            "content": {
+                "parts": [{"text": "Hello from Gemini"}]
+            }
+        }]
+    }
 
-    def side_effect(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        if call_count <= 2:
-            raise Exception("Rate limit exceeded")
-        mock_response = MagicMock()
-        mock_response.text = "Success after retry"
-        mock_response.usage_metadata = None
-        return mock_response
-
-    mock_model = _make_mock_model(side_effect=side_effect)
-    monkeypatch.setattr("app.ai.client.genai.GenerativeModel", lambda name: mock_model)
-
-    result = generate_content("test prompt", max_retries=3, timeout_seconds=30)
-    assert result == "Success after retry"
-    assert call_count == 3
+    with patch("app.ai.client.urllib.request.urlopen", return_value=_make_response(api_response)):
+        result = generate_content("test prompt")
+        assert result == "Hello from Gemini"
 
 
-def test_generate_content_raises_after_max_retries(monkeypatch):
+def test_generate_content_empty_response(monkeypatch):
     _setup_mock_app(monkeypatch)
 
-    mock_model = _make_mock_model(side_effect=Exception("Service unavailable"))
-    monkeypatch.setattr("app.ai.client.genai.GenerativeModel", lambda name: mock_model)
+    api_response = {
+        "candidates": [{
+            "content": {
+                "parts": [{"text": ""}]
+            }
+        }]
+    }
 
-    with pytest.raises(RuntimeError, match="Gemini API call failed"):
-        generate_content("test prompt", max_retries=2, timeout_seconds=30)
+    with patch("app.ai.client.urllib.request.urlopen", return_value=_make_response(api_response)):
+        with pytest.raises(RuntimeError, match="Gemini returned an empty response"):
+            generate_content("test prompt")
 
-    assert mock_model.generate_content.call_count == 3
 
-
-def test_generate_content_no_retry_on_permanent_error(monkeypatch):
+def test_generate_content_api_error_in_body(monkeypatch):
     _setup_mock_app(monkeypatch)
 
-    mock_model = _make_mock_model(side_effect=Exception("Invalid API key"))
-    monkeypatch.setattr("app.ai.client.genai.GenerativeModel", lambda name: mock_model)
+    api_response = {
+        "error": {"message": "API key invalid", "code": 400}
+    }
 
-    with pytest.raises(RuntimeError, match="Gemini API call failed"):
-        generate_content("test prompt", max_retries=3, timeout_seconds=30)
+    with patch("app.ai.client.urllib.request.urlopen", return_value=_make_response(api_response)):
+        with pytest.raises(RuntimeError, match="Gemini API error"):
+            generate_content("test prompt")
 
-    assert mock_model.generate_content.call_count == 1
 
-
-def test_generate_content_retries_on_timeout(monkeypatch):
+def test_generate_content_http_404_tries_fallback_model(monkeypatch):
     _setup_mock_app(monkeypatch)
 
-    call_count = 0
+    # First model (gemini-1.5-flash) returns 404, second succeeds
+    def side_effect(req, **kwargs):
+        if "gemini-1.5-flash" in req.full_url:
+            raise urllib.error.HTTPError(
+                req.full_url, 404, "Not Found", {}, b'{"error": {"message": "not found"}}'
+            )
+        return _make_response({
+            "candidates": [{
+                "content": {"parts": [{"text": "Fallback success"}]}
+            }]
+        })
 
-    def side_effect(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        if call_count <= 2:
-            raise concurrent.futures.TimeoutError()
-        mock_response = MagicMock()
-        mock_response.text = "Success after timeout"
-        mock_response.usage_metadata = None
-        return mock_response
-
-    mock_model = _make_mock_model(side_effect=side_effect)
-    monkeypatch.setattr("app.ai.client.genai.GenerativeModel", lambda name: mock_model)
-
-    result = generate_content("test prompt", max_retries=3, timeout_seconds=30)
-    assert result == "Success after timeout"
-    assert call_count == 3
+    with patch("app.ai.client.urllib.request.urlopen", side_effect=side_effect):
+        result = generate_content("test prompt")
+        assert result == "Fallback success"
 
 
-def test_generate_content_raises_after_timeout_retries(monkeypatch):
+def test_generate_content_http_404_on_last_model_raises(monkeypatch):
     _setup_mock_app(monkeypatch)
 
-    mock_model = _make_mock_model(side_effect=concurrent.futures.TimeoutError)
-    monkeypatch.setattr("app.ai.client.genai.GenerativeModel", lambda name: mock_model)
+    def side_effect(req, **kwargs):
+        raise urllib.error.HTTPError(
+            req.full_url, 404, "Not Found", {}, b'{"error": {"message": "not found"}}'
+        )
 
-    with pytest.raises(RuntimeError, match="Gemini API call failed"):
-        generate_content("test prompt", max_retries=2, timeout_seconds=30)
-
-    assert mock_model.generate_content.call_count == 3
-
-
-def test_generate_content_logs_token_usage(monkeypatch):
-    mock_app = _setup_mock_app(monkeypatch)
-
-    mock_meta = MagicMock()
-    mock_meta.prompt_token_count = 100
-    mock_meta.candidates_token_count = 50
-
-    mock_model = _make_mock_model(response_text="Response text", usage_metadata=mock_meta)
-    monkeypatch.setattr("app.ai.client.genai.GenerativeModel", lambda name: mock_model)
-
-    generate_content("test prompt", timeout_seconds=30)
-
-    log_calls = [
-        call for call in mock_app.logger.info.call_args_list
-        if "Gemini usage" in str(call)
-    ]
-    assert len(log_calls) == 1
-    assert "prompt=100" in str(log_calls[0])
-    assert "completion=50" in str(log_calls[0])
-    assert "total=150" in str(log_calls[0])
+    with patch("app.ai.client.urllib.request.urlopen", side_effect=side_effect):
+        with pytest.raises(RuntimeError, match="404"):
+            generate_content("test prompt")
 
 
-def test_generate_content_empty_response_not_retried(monkeypatch):
+def test_generate_content_http_429_raises(monkeypatch):
     _setup_mock_app(monkeypatch)
 
-    mock_model = _make_mock_model(response_text="")
-    monkeypatch.setattr("app.ai.client.genai.GenerativeModel", lambda name: mock_model)
+    def side_effect(req, **kwargs):
+        raise urllib.error.HTTPError(
+            req.full_url, 429, "Too Many Requests", {}, b'{"error": {"message": "rate limited"}}'
+        )
 
-    with pytest.raises(RuntimeError, match="Gemini returned an empty response"):
-        generate_content("test prompt", max_retries=3, timeout_seconds=30)
+    with patch("app.ai.client.urllib.request.urlopen", side_effect=side_effect):
+        with pytest.raises(RuntimeError, match="429"):
+            generate_content("test prompt")
 
-    assert mock_model.generate_content.call_count == 1
+
+def test_generate_content_url_error_raises(monkeypatch):
+    _setup_mock_app(monkeypatch)
+
+    with patch("app.ai.client.urllib.request.urlopen", side_effect=urllib.error.URLError("Network down")):
+        with pytest.raises(RuntimeError, match="Network down"):
+            generate_content("test prompt")
+
+
+def test_generate_content_timeout_raises(monkeypatch):
+    _setup_mock_app(monkeypatch)
+
+    with patch("app.ai.client.urllib.request.urlopen", side_effect=TimeoutError()):
+        with pytest.raises(RuntimeError, match="timed out after"):
+            generate_content("test prompt", timeout_seconds=10)
+
+
+def test_generate_content_no_api_key(monkeypatch):
+    mock_app = MagicMock()
+    mock_app.config = {"GEMINI_API_KEY": None}
+    monkeypatch.setattr("app.ai.client.current_app", mock_app)
+
+    with pytest.raises(RuntimeError, match="GEMINI_API_KEY is not set"):
+        generate_content("test prompt")
