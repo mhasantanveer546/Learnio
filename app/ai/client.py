@@ -1,13 +1,13 @@
 import json
+import socket
 import urllib.request
 import urllib.error
 from flask import current_app
 
-DEFAULT_TIMEOUT_SECONDS = 45
+DEFAULT_TIMEOUT_SECONDS = 30
 
 
 def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
-    """Call Gemini via the REST API. Avoids grpc/threading issues on Vercel."""
     api_key = current_app.config.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
@@ -18,9 +18,13 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.7,
-            "maxOutputTokens": 8192,
+            "maxOutputTokens": 4096,
         }
     }).encode("utf-8")
+
+    current_app.logger.info(
+        f"Gemini request: {len(payload)} bytes, {len(prompt)} chars prompt"
+    )
 
     for model_name in models:
         url = (
@@ -35,14 +39,22 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
             method="POST",
         )
 
+        old_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(timeout_seconds)
+
         try:
             with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
+
+            socket.setdefaulttimeout(old_timeout)
 
             if "candidates" in data and data["candidates"]:
                 text = data["candidates"][0]["content"]["parts"][0]["text"]
                 if not text:
                     raise RuntimeError("Gemini returned an empty response.")
+                current_app.logger.info(
+                    f"Gemini success: {len(text)} chars response"
+                )
                 return text
 
             if "error" in data:
@@ -51,6 +63,7 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
             raise RuntimeError("Gemini returned an unexpected response.")
 
         except urllib.error.HTTPError as e:
+            socket.setdefaulttimeout(old_timeout)
             body = ""
             try:
                 if e.fp is not None:
@@ -58,17 +71,25 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
             except Exception:
                 body = str(e)
 
-            # 404 means model name wrong — try next one
             if e.code == 404 and model_name != models[-1]:
+                current_app.logger.warning(
+                    f"Gemini model {model_name} 404, trying fallback"
+                )
                 continue
             raise RuntimeError(f"Gemini API call failed: {e.code} {e.reason} — {body}")
 
         except urllib.error.URLError as e:
+            socket.setdefaulttimeout(old_timeout)
             raise RuntimeError(f"Gemini API call failed: {e.reason}")
 
         except TimeoutError:
+            socket.setdefaulttimeout(old_timeout)
             raise RuntimeError(
                 f"Gemini API call failed: timed out after {timeout_seconds}s"
             )
+
+        except Exception as e:
+            socket.setdefaulttimeout(old_timeout)
+            raise RuntimeError(f"Gemini API call failed: {e}")
 
     raise RuntimeError("Gemini API call failed: no valid model found.")

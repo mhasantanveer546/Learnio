@@ -7,7 +7,7 @@ def build_summary_prompt(extracted_text):
     # Gemini has a context window, but extremely long lecture PDFs could
     # still be excessive — truncate defensively rather than let one giant
     # document silently blow the budget or produce a degraded response.
-    max_chars = 30000
+    max_chars = 8000
     text = extracted_text[:max_chars]
 
     return f"""You are an expert study assistant helping a university student understand their lecture material.
@@ -38,7 +38,7 @@ def build_quiz_prompt(extracted_text, num_questions, question_types, difficulty)
     this needs to be reliably parsed into QuizQuestion rows — unlike
     the summary, which is meant to be read as-is)."""
 
-    max_chars = 30000
+    max_chars = 8000
     text = extracted_text[:max_chars]
 
     type_labels = {
@@ -94,7 +94,7 @@ def build_flashcard_prompt(extracted_text, num_cards=15):
     same reasoning as build_quiz_prompt — this gets parsed into
     Flashcard rows, so it needs to be reliable JSON, not prose."""
 
-    max_chars = 30000
+    max_chars = 8000
     text = extracted_text[:max_chars]
 
     return f"""You are creating flashcards for a university student based on their study material.
