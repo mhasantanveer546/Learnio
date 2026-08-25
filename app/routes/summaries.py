@@ -26,21 +26,18 @@ def generate_summary_route(material_id):
     ).first_or_404()
 
     if not material.extracted_text:
-        flash("This material has no extracted text yet.", "warning")
-        return redirect(url_for("summaries.view_summary", material_id=material_id))
+        return jsonify({"status": "failed", "error": "No extracted text yet"}), 400
 
     existing = Summary.query.filter_by(material_id=material_id).first()
 
     if existing:
         if existing.status == "ready":
-            flash("A summary already exists for this material.", "info")
-            return redirect(url_for("summaries.view_summary", material_id=material_id))
+            return jsonify({"status": "ready"})
 
         if existing.status == "processing":
             elapsed = _elapsed_seconds(existing.created_at)
             if elapsed < 30:
-                flash("Summary generation is already in progress. Please wait.", "info")
-                return redirect(url_for("summaries.view_summary", material_id=material_id))
+                return jsonify({"status": "processing"})
 
         db.session.delete(existing)
         db.session.commit()
@@ -51,13 +48,12 @@ def generate_summary_route(material_id):
 
     try:
         generate_summary(material_id=material.id)
-        flash("Summary generated successfully!", "success")
+        db.session.refresh(summary)
+        return jsonify({"status": summary.status})
     except Exception as e:
         current_app.logger.exception(f"Summary generation failed: {e}")
-        flash("Summary generation failed. Please try again.", "danger")
-
-    # Cache-busting timestamp forces fresh load after redirect
-    return redirect(url_for("summaries.view_summary", material_id=material_id, t=int(time())))
+        db.session.refresh(summary)
+        return jsonify({"status": "failed", "error": str(e)}), 500
 
 
 @summaries_bp.route("/<int:material_id>/status")
@@ -87,7 +83,9 @@ def view_summary(material_id):
         id=material_id, user_id=current_user.id
     ).first_or_404()
 
-    resp = make_response(render_template("materials/summary.html", material=material, summary=material.summary))
+    resp = make_response(render_template(
+        "materials/summary.html", material=material, summary=material.summary
+    ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"

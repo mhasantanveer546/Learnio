@@ -7,12 +7,9 @@ from flask_login import login_required, current_user
 from app.extensions import db, limiter
 from app.models import StudyMaterial, Quiz, QuizAttempt, QuizAnswer
 from app.services.quiz_service import generate_quiz, start_attempt, submit_attempt, self_grade_answer
-from app.services.background_ai import run_background_task
 
 
 def _elapsed_seconds(created_at):
-    """Safely compute elapsed time since created_at, handling both
-    timezone-aware and naive datetimes from the database."""
     now = datetime.now(timezone.utc)
     if created_at.tzinfo is None:
         created_at = created_at.replace(tzinfo=timezone.utc)
@@ -46,21 +43,18 @@ def generate_quiz_route(material_id):
     ).first_or_404()
 
     if not material.extracted_text:
-        flash("This material has no extracted text yet.", "warning")
-        return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
+        return jsonify({"status": "failed", "error": "No extracted text yet"}), 400
 
     existing = Quiz.query.filter_by(material_id=material_id).first()
 
     if existing:
         if existing.status == "ready":
-            flash("A quiz already exists for this material.", "info")
-            return redirect(url_for("quizzes.take_quiz", quiz_id=existing.id))
+            return jsonify({"status": "ready"})
 
         if existing.status == "processing":
             elapsed = _elapsed_seconds(existing.created_at)
             if elapsed < 30:
-                flash("Quiz generation is already in progress. Please wait.", "info")
-                return redirect(url_for("quizzes.configure_quiz", material_id=material_id))
+                return jsonify({"status": "processing"})
 
         db.session.delete(existing)
         db.session.commit()
@@ -85,12 +79,12 @@ def generate_quiz_route(material_id):
             question_types=question_types,
             difficulty=difficulty,
         )
-        flash("Quiz generated successfully!", "success")
+        db.session.refresh(quiz)
+        return jsonify({"status": quiz.status})
     except Exception as e:
         current_app.logger.exception(f"Quiz generation failed: {e}")
-        flash("Quiz generation failed. Please try again.", "danger")
-
-    return redirect(url_for("quizzes.configure_quiz", material_id=material_id, t=int(time())))
+        db.session.refresh(quiz)
+        return jsonify({"status": "failed", "error": str(e)}), 500
 
 
 @quizzes_bp.route("/<int:quiz_id>/take", methods=["GET"])

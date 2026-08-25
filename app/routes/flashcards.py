@@ -5,7 +5,6 @@ from flask_login import login_required, current_user
 from app.extensions import limiter, db
 from app.models import StudyMaterial, Flashcard, FlashcardSet
 from app.services.flashcard_service import generate_flashcards, mark_card
-from app.services.background_ai import run_background_task
 
 
 def _elapsed_seconds(created_at):
@@ -27,21 +26,18 @@ def generate_flashcards_route(material_id):
     ).first_or_404()
 
     if not material.extracted_text:
-        flash("This material has no extracted text yet.", "warning")
-        return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
+        return jsonify({"status": "failed", "error": "No extracted text yet"}), 400
 
     existing = FlashcardSet.query.filter_by(material_id=material_id).first()
 
     if existing:
         if existing.status == "ready":
-            flash("Flashcards already exist for this material.", "info")
-            return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
+            return jsonify({"status": "ready"})
 
         if existing.status == "processing":
             elapsed = _elapsed_seconds(existing.created_at)
             if elapsed < 30:
-                flash("Flashcard generation is already in progress. Please wait.", "info")
-                return redirect(url_for("flashcards.study_flashcards", material_id=material_id))
+                return jsonify({"status": "processing"})
 
         for card in list(existing.cards):
             db.session.delete(card)
@@ -56,12 +52,12 @@ def generate_flashcards_route(material_id):
 
     try:
         generate_flashcards(material_id=material.id, num_cards=num_cards)
-        flash("Flashcards generated successfully!", "success")
+        db.session.refresh(flashcard_set)
+        return jsonify({"status": flashcard_set.status})
     except Exception as e:
         current_app.logger.exception(f"Flashcard generation failed: {e}")
-        flash("Flashcard generation failed. Please try again.", "danger")
-
-    return redirect(url_for("flashcards.study_flashcards", material_id=material_id, t=int(time())))
+        db.session.refresh(flashcard_set)
+        return jsonify({"status": "failed", "error": str(e)}), 500
 
 
 @flashcards_bp.route("/<int:material_id>/status")
