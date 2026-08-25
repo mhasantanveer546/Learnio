@@ -13,7 +13,7 @@ def get_gemini_client():
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
     # FORCE REST transport — avoids grpc hangs on Vercel serverless
     genai.configure(api_key=api_key, transport="rest")
-    return genai.GenerativeModel("gemini-2.5-flash")
+    return genai.GenerativeModel("gemini-3.6-flash")
 
 
 def _is_transient_error(exc):
@@ -60,7 +60,7 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
                 total = prompt_tokens + completion_tokens
                 current_app.logger.info(
                     f"Gemini usage: prompt={prompt_tokens} completion={completion_tokens} "
-                    f"total={total} model=gemini-2.5-flash"
+                    f"total={total} model=gemini-3.6-flash"
                 )
 
             return response.text
