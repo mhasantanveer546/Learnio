@@ -5,6 +5,8 @@ from app.models import StudyMaterial, FlashcardSet, Flashcard
 from app.ai.client import generate_content
 from app.ai.prompts import build_flashcard_prompt
 
+MAX_TEXT_LENGTH = 50000
+
 
 def _validate_flashcard_json(parsed):
     if not isinstance(parsed, dict):
@@ -24,8 +26,6 @@ def _validate_flashcard_json(parsed):
 
 
 def _refresh_connection():
-    """Discard stale session and connection pool. Only disposes on
-    PostgreSQL — SQLite in-memory would be destroyed by dispose()."""
     db.session.remove()
     if db.engine.url.drivername == "postgresql":
         db.engine.dispose()
@@ -47,7 +47,12 @@ def generate_flashcards(material_id, num_cards=15):
     db.session.commit()
 
     set_id = flashcard_set.id
-    prompt = build_flashcard_prompt(material.extracted_text, num_cards)
+
+    # Truncate long texts to avoid Gemini timeouts
+    text = material.extracted_text
+    if len(text) > MAX_TEXT_LENGTH:
+        text = text[:MAX_TEXT_LENGTH] + "\n\n[Content truncated for processing]"
+    prompt = build_flashcard_prompt(text, num_cards)
 
     try:
         raw_response = generate_content(prompt)

@@ -5,6 +5,8 @@ from app.models import StudyMaterial, Quiz, QuizQuestion, QuizAttempt, QuizAnswe
 from app.ai.client import generate_content
 from app.ai.prompts import build_quiz_prompt
 
+MAX_TEXT_LENGTH = 50000  # ~12K tokens, fast to process
+
 
 def _validate_quiz_json(parsed):
     if not isinstance(parsed, dict):
@@ -54,9 +56,11 @@ def generate_quiz(quiz_id, material_id, num_questions, question_types, difficult
     quiz.difficulty = difficulty
     db.session.commit()
 
-    prompt = build_quiz_prompt(
-        material.extracted_text, num_questions, question_types, difficulty
-    )
+    # Truncate long texts to avoid Gemini timeouts
+    text = material.extracted_text
+    if len(text) > MAX_TEXT_LENGTH:
+        text = text[:MAX_TEXT_LENGTH] + "\n\n[Content truncated for processing]"
+    prompt = build_quiz_prompt(text, num_questions, question_types, difficulty)
 
     try:
         raw_response = generate_content(prompt)
@@ -85,7 +89,7 @@ def generate_quiz(quiz_id, material_id, num_questions, question_types, difficult
             quiz_id=quiz.id,
             question_type=q["type"],
             question_text=q["question"],
-            options=json.dumps(q["options"]) if q.get("options") else None,
+            options=json.dumps(q.get("options")) if q.get("options") else None,
             correct_answer=q["correct_answer"],
             order_index=index,
         )

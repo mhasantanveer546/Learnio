@@ -3,10 +3,10 @@ from app.models import StudyMaterial, Summary
 from app.ai.client import generate_content
 from app.ai.prompts import build_summary_prompt
 
+MAX_TEXT_LENGTH = 50000  # ~12K tokens, fast to process
+
 
 def _refresh_connection():
-    """Discard stale session and connection pool. Only disposes on
-    PostgreSQL — SQLite in-memory would be destroyed by dispose()."""
     db.session.remove()
     if db.engine.url.drivername == "postgresql":
         db.engine.dispose()
@@ -29,7 +29,12 @@ def generate_summary(material_id):
     db.session.commit()
 
     summary_id = summary.id
-    prompt = build_summary_prompt(material.extracted_text)
+
+    # Truncate long texts to avoid Gemini timeouts
+    text = material.extracted_text
+    if len(text) > MAX_TEXT_LENGTH:
+        text = text[:MAX_TEXT_LENGTH] + "\n\n[Content truncated for processing]"
+    prompt = build_summary_prompt(text)
 
     try:
         content = generate_content(prompt)

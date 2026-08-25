@@ -4,7 +4,7 @@ import time
 import google.generativeai as genai
 from flask import current_app
 
-DEFAULT_TIMEOUT_SECONDS = 20  # one shot, must succeed in 20s
+DEFAULT_TIMEOUT_SECONDS = 45  # Increased from 20
 
 
 def get_gemini_client():
@@ -13,6 +13,7 @@ def get_gemini_client():
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
     genai.configure(api_key=api_key)
     return genai.GenerativeModel("gemini-flash-latest")
+
 
 def _is_transient_error(exc):
     error_msg = str(exc).lower()
@@ -28,23 +29,19 @@ def _is_transient_error(exc):
 
 
 def _generate_with_timeout(model, prompt, timeout_seconds):
-    """Runs model.generate_content in a worker thread with a hard timeout.
-    CRITICAL: On timeout we shutdown with wait=False so the hanging
-    Gemini thread doesn't block us forever (essential on Vercel)."""
+    """Runs model.generate_content in a worker thread with a hard timeout."""
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     future = executor.submit(model.generate_content, prompt)
     try:
         return future.result(timeout=timeout_seconds)
     except concurrent.futures.TimeoutError:
-        # Do NOT wait for the hanging worker thread — on serverless
-        # that would eat our entire execution budget.
         executor.shutdown(wait=False)
         raise
 
 
-def generate_content(prompt, max_retries=1, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
-    """Single-entry point for Gemini. Zero retries on Vercel — one
-    clean attempt. If it fails, the caller marks the job 'failed'."""
+def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
+    """Single-entry point for Gemini. Zero retries by default for
+    synchronous execution — fail fast so the user isn't left hanging."""
     model = get_gemini_client()
 
     for attempt in range(max_retries + 1):
