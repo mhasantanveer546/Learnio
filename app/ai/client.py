@@ -11,7 +11,6 @@ def get_gemini_client():
     api_key = current_app.config.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
-    # FORCE REST transport — avoids grpc hangs on Vercel serverless
     genai.configure(api_key=api_key, transport="rest")
     return genai.GenerativeModel("gemini-3.6-flash")
 
@@ -29,10 +28,33 @@ def _is_transient_error(exc):
     return any(signal in error_msg for signal in transient_signals)
 
 
+def _extract_text(response):
+    """Safely extract text from Gemini response, handling REST transport
+    quirks where response.text may be empty but candidates exist."""
+    # Try the convenience property first
+    if hasattr(response, "text") and response.text:
+        return response.text
+
+    # Fallback: traverse the raw candidate structure
+    if hasattr(response, "candidates") and response.candidates:
+        candidate = response.candidates[0]
+        if hasattr(candidate, "content") and candidate.content:
+            parts = candidate.content.parts
+            if parts:
+                return "".join(
+                    part.text for part in parts if hasattr(part, "text") and part.text
+                )
+
+    # Check for blocked content / safety issues
+    if hasattr(response, "prompt_feedback") and response.prompt_feedback:
+        feedback = response.prompt_feedback
+        if hasattr(feedback, "block_reason") and feedback.block_reason:
+            raise RuntimeError(f"Gemini blocked the prompt: {feedback.block_reason}")
+
+    return ""
+
+
 def _generate_with_timeout(model, prompt, timeout_seconds):
-    """Runs model.generate_content in a worker thread with a hard timeout.
-    With transport='rest', this uses HTTP under the hood — much more
-    reliable on Vercel than grpc."""
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     future = executor.submit(model.generate_content, prompt)
     try:
@@ -43,14 +65,14 @@ def _generate_with_timeout(model, prompt, timeout_seconds):
 
 
 def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
-    """Single-entry point for Gemini. Zero retries on Vercel."""
     model = get_gemini_client()
 
     for attempt in range(max_retries + 1):
         try:
             response = _generate_with_timeout(model, prompt, timeout_seconds)
+            text = _extract_text(response)
 
-            if not response.text:
+            if not text:
                 raise RuntimeError("Gemini returned an empty response.")
 
             if hasattr(response, "usage_metadata") and response.usage_metadata:
@@ -63,7 +85,7 @@ def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECO
                     f"total={total} model=gemini-3.6-flash"
                 )
 
-            return response.text
+            return text
 
         except RuntimeError:
             raise

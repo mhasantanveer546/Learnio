@@ -93,7 +93,12 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
     const rawMarkdown = {{ summary.content | tojson }};
-    document.getElementById("summary-content").innerHTML = marked.parse(rawMarkdown);
+    const el = document.getElementById("summary-content");
+    try {
+        el.innerHTML = marked.parse(rawMarkdown);
+    } catch (e) {
+        el.textContent = rawMarkdown; // fallback: show raw text
+    }
 </script>
 {% endif %}
 {% endblock %}
