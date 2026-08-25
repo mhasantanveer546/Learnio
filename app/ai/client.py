@@ -1,93 +1,69 @@
-import concurrent.futures
-import time
-
-import google.generativeai as genai
+import json
+import urllib.request
+import urllib.error
 from flask import current_app
 
-DEFAULT_TIMEOUT_SECONDS = 45  # Increased from 20
-
-
-def get_gemini_client():
-    api_key = current_app.config.get("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel("gemini-flash-latest")
-
-
-def _is_transient_error(exc):
-    error_msg = str(exc).lower()
-    transient_signals = [
-        "rate limit", "quota", "resource exhausted",
-        "timeout", "timed out", "deadline",
-        "temporarily unavailable", "service unavailable",
-        "connection", "network",
-        "internal server error",
-        "503", "504", "429",
-    ]
-    return any(signal in error_msg for signal in transient_signals)
-
-
-def _generate_with_timeout(model, prompt, timeout_seconds):
-    """Runs model.generate_content in a worker thread with a hard timeout."""
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(model.generate_content, prompt)
-    try:
-        return future.result(timeout=timeout_seconds)
-    except concurrent.futures.TimeoutError:
-        executor.shutdown(wait=False)
-        raise
+DEFAULT_TIMEOUT_SECONDS = 45
 
 
 def generate_content(prompt, max_retries=0, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
-    """Single-entry point for Gemini. Zero retries by default for
-    synchronous execution — fail fast so the user isn't left hanging."""
-    model = get_gemini_client()
+    """Call Gemini via the REST API. Avoids grpc/threading issues on Vercel."""
+    api_key = current_app.config.get("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
 
-    for attempt in range(max_retries + 1):
+    # Try model names in order of preference
+    models = ["gemini-1.5-flash", "gemini-flash-latest"]
+
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 8192,
+        }
+    }).encode("utf-8")
+
+    for model_name in models:
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{model_name}:generateContent?key={api_key}"
+        )
+
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
         try:
-            response = _generate_with_timeout(model, prompt, timeout_seconds)
+            with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
 
-            if not response.text:
-                raise RuntimeError("Gemini returned an empty response.")
+            if "candidates" in data and data["candidates"]:
+                text = data["candidates"][0]["content"]["parts"][0]["text"]
+                if not text:
+                    raise RuntimeError("Gemini returned an empty response.")
+                return text
 
-            if hasattr(response, "usage_metadata") and response.usage_metadata:
-                meta = response.usage_metadata
-                prompt_tokens = getattr(meta, "prompt_token_count", 0)
-                completion_tokens = getattr(meta, "candidates_token_count", 0)
-                total = prompt_tokens + completion_tokens
-                current_app.logger.info(
-                    f"Gemini usage: prompt={prompt_tokens} completion={completion_tokens} "
-                    f"total={total} model=gemini-flash-latest"
-                )
+            if "error" in data:
+                raise RuntimeError(f"Gemini API error: {data['error']}")
 
-            return response.text
+            raise RuntimeError("Gemini returned an unexpected response.")
 
-        except RuntimeError:
-            raise
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="ignore")
+            # 404 means model name wrong — try next one
+            if e.code == 404 and model_name != models[-1]:
+                continue
+            raise RuntimeError(f"Gemini API call failed: {e.code} {e.reason} — {body}")
 
-        except concurrent.futures.TimeoutError:
-            if attempt < max_retries:
-                wait = 2 ** attempt
-                current_app.logger.warning(
-                    f"Gemini call timed out after {timeout_seconds}s "
-                    f"(attempt {attempt + 1}/{max_retries + 1}). Retrying in {wait}s..."
-                )
-                time.sleep(wait)
-            else:
-                raise RuntimeError(
-                    f"Gemini API call failed: timed out after {timeout_seconds}s"
-                )
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"Gemini API call failed: {e.reason}")
 
-        except Exception as e:
-            if _is_transient_error(e) and attempt < max_retries:
-                wait = 2 ** attempt
-                current_app.logger.warning(
-                    f"Gemini transient error (attempt {attempt + 1}/{max_retries + 1}): {e}. "
-                    f"Retrying in {wait}s..."
-                )
-                time.sleep(wait)
-            else:
-                raise RuntimeError(f"Gemini API call failed: {e}")
+        except TimeoutError:
+            raise RuntimeError(
+                f"Gemini API call failed: timed out after {timeout_seconds}s"
+            )
 
-    raise RuntimeError("Gemini API call failed after maximum retries.")
+    raise RuntimeError("Gemini API call failed: no valid model found.")
