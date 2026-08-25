@@ -1,35 +1,33 @@
 import numpy as np
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from flask import current_app
 
-_EMBED_MODEL = "gemini-embedding-001"
+_EMBED_MODEL = "models/gemini-embedding-001"
 
 
-def _get_client():
+def _ensure_configured():
     api_key = current_app.config.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set.")
-    return genai.Client(api_key=api_key)
+    # FORCE REST transport here too
+    genai.configure(api_key=api_key, transport="rest")
 
 
 def embed_texts(texts):
-    """Embeds a list of text chunks via google-genai REST API."""
-    client = _get_client()
-    result = client.models.embed_content(
+    _ensure_configured()
+    result = genai.embed_content(
         model=_EMBED_MODEL,
-        contents=texts,
-        config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
+        content=texts,
+        task_type="RETRIEVAL_DOCUMENT",
     )
-    return np.array([e.values for e in result.embeddings], dtype=np.float32)
+    return np.array(result["embedding"], dtype=np.float32)
 
 
 def embed_query(text):
-    """Embeds a single query string via google-genai REST API."""
-    client = _get_client()
-    result = client.models.embed_content(
+    _ensure_configured()
+    result = genai.embed_content(
         model=_EMBED_MODEL,
-        contents=text,
-        config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
+        content=text,
+        task_type="RETRIEVAL_QUERY",
     )
-    return np.array(result.embeddings[0].values, dtype=np.float32)
+    return np.array(result["embedding"], dtype=np.float32)
