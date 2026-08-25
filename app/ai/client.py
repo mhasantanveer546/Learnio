@@ -12,7 +12,7 @@ def get_gemini_client():
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set. Add it to your .env file.")
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel("gemini-1.5-flash")
+    return genai.GenerativeModel("gemini-flash-latest")
 
 def _is_transient_error(exc):
     error_msg = str(exc).lower()
