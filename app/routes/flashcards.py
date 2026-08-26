@@ -51,13 +51,21 @@ def generate_flashcards_route(material_id):
     num_cards = request.form.get("num_cards", 15, type=int)
 
     try:
-        generate_flashcards(material_id=material.id, num_cards=num_cards)
-        db.session.refresh(flashcard_set)
+        # generate_flashcards() internally resets the session (to dodge stale
+        # Neon connections), so the `flashcard_set` object above ends up
+        # detached. Use the fresh object the service returns instead.
+        flashcard_set = generate_flashcards(material_id=material.id, num_cards=num_cards)
         return jsonify({"status": flashcard_set.status})
     except Exception as e:
         current_app.logger.exception(f"Flashcard generation failed: {e}")
-        db.session.refresh(flashcard_set)
-        return jsonify({"status": "failed", "error": str(e)}), 500
+        # Don't refresh the stale/detached object from before the call —
+        # re-query fresh so we report whatever the service actually
+        # persisted (it may have already written "failed" itself).
+        fresh = FlashcardSet.query.filter_by(material_id=material_id).first()
+        return jsonify({
+            "status": fresh.status if fresh else "failed",
+            "error": str(e),
+        }), 500
 
 
 @flashcards_bp.route("/<int:material_id>/status")

@@ -47,13 +47,21 @@ def generate_summary_route(material_id):
     db.session.commit()
 
     try:
-        generate_summary(material_id=material.id)
-        db.session.refresh(summary)
+        # generate_summary() internally resets the session (to dodge stale
+        # Neon connections), so the `summary` object above ends up detached.
+        # Use the fresh object the service returns instead of touching it.
+        summary = generate_summary(material_id=material.id)
         return jsonify({"status": summary.status})
     except Exception as e:
         current_app.logger.exception(f"Summary generation failed: {e}")
-        db.session.refresh(summary)
-        return jsonify({"status": "failed", "error": str(e)}), 500
+        # Don't refresh the stale/detached object from before the call —
+        # re-query fresh so we report whatever the service actually
+        # persisted (it may have already written "failed" itself).
+        fresh = Summary.query.filter_by(material_id=material_id).first()
+        return jsonify({
+            "status": fresh.status if fresh else "failed",
+            "error": str(e),
+        }), 500
 
 
 @summaries_bp.route("/<int:material_id>/status")
